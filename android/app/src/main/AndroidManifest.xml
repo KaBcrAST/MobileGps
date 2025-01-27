@@ -1,0 +1,15 @@
+<!-- filepath: /c:/Users/thoma/Mobile/Mobile-R/android/app/src/main/AndroidManifest.xml -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.yourapp">
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/AppTheme">
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyAMthwpI5QDvhvxS-fuqVasqK3vr3U8dms"/>
+        ...
+    </application>
+</manifest>
