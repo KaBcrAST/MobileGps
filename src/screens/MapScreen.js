@@ -1,123 +1,155 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Alert, TouchableOpacity, Text, Keyboard, PermissionsAndroid, Platform } from 'react-native';
-import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
-import Geolocation from '@react-native-community/geolocation';
-import BurgerMenu from '../components/BurgerMenu';
-import BottomMenu from '../components/BottomMenu';
+import React, { useRef, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import Map from '../components/Map';
+import SearchBar from '../components/SearchBar';
+import RouteSelection from '../components/RouteSelection';
+import NavigationInfo from '../components/NavigationInfo';
+import SpeedDisplay from '../components/SpeedDisplay';
+import SpeedLimitSign from '../components/SpeedLimitSign';
+import FloatingMenu from '../components/FloatingMenu';
+import useLocation from '../hooks/useLocation';
+import useNavigationLogic from '../hooks/useNavigationLogic';
+import useCameraControl from '../hooks/useCameraControl';
+import styles from '../styles/globalStyles';
 
-const MapScreen = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [region, setRegion] = useState({
-    latitude: 46.603354, // Latitude de la France
-    longitude: 1.888334, // Longitude de la France
-    latitudeDelta: 5.0, // Ajuster le zoom
-    longitudeDelta: 5.0, // Ajuster le zoom
-  });
+export default function MapScreen() {
+  const mapRef = useRef(null);
+  const { location, region, speed, speedLimit } = useLocation(mapRef);
+  const { 
+    destination, 
+    setDestination, 
+    routeInfo, 
+    setRouteInfo,
+    isNavigating, 
+    startNavigation, 
+    stopNavigation, 
+    heading 
+  } = useNavigationLogic(location, mapRef);
+  const { isCameraLocked, unlockCamera, updateCamera } = useCameraControl(mapRef);
+  
+  const [nextStep, setNextStep] = useState(null);
+  const [routes, setRoutes] = useState([]);
+  const [selectedRoute, setSelectedRoute] = useState(0);
+  const [showRoutes, setShowRoutes] = useState(false);
+  const [activeRoute, setActiveRoute] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const requestLocationPermission = async () => {
-      if (Platform.OS === 'android') {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Permission de localisation',
-            message: 'Cette application a besoin de votre permission pour accéder à votre localisation.',
-            buttonNeutral: 'Demander plus tard',
-            buttonNegative: 'Annuler',
-            buttonPositive: 'OK',
-          }
+  const handlePlaceSelect = async (dest) => {
+    setDestination(dest);
+    if (location) {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/directions/json?origin=${
+            location.coords.latitude
+          },${location.coords.longitude}&destination=${
+            dest.latitude
+          },${dest.longitude}&alternatives=true&key=AIzaSyAMthwpI5QDvhvxS-fuqVasqK3vr3U8dms`
         );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          Geolocation.getCurrentPosition(
-            (position) => {
-              setRegion({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-              });
-            },
-            (error) => {
-              console.log(error);
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+        const data = await response.json();
+        
+        if (data.status === 'OK' && data.routes?.length > 0) {
+          setRoutes(data.routes);
+          setShowRoutes(true);
+          setSelectedRoute(0);
+
+          // Adjust map view to show all routes
+          const bounds = data.routes.reduce((acc, route) => {
+            const { northeast, southwest } = route.bounds;
+            return {
+              north: Math.max(acc.north, northeast.lat),
+              south: Math.min(acc.south, southwest.lat),
+              east: Math.max(acc.east, northeast.lng),
+              west: Math.min(acc.west, southwest.lng),
+            };
+          }, {
+            north: -90,
+            south: 90,
+            east: -180,
+            west: 180,
+          });
+
+          mapRef.current?.fitToCoordinates(
+            [
+              { latitude: bounds.north, longitude: bounds.east },
+              { latitude: bounds.south, longitude: bounds.west },
+            ],
+            {
+              edgePadding: { top: 100, right: 50, bottom: 300, left: 50 },
+              animated: true,
+            }
           );
+        } else {
+          Alert.alert('Erreur', 'Aucun itinéraire trouvé');
         }
-      } else {
-        Geolocation.requestAuthorization();
-        Geolocation.getCurrentPosition(
-          (position) => {
-            setRegion({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              latitudeDelta: 0.0922,
-              longitudeDelta: 0.0421,
-            });
-          },
-          (error) => {
-            console.log(error);
-          },
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-        );
+      } catch (error) {
+        console.error('Error fetching routes:', error);
+        Alert.alert('Erreur', 'Impossible de charger les itinéraires');
+      } finally {
+        setIsLoading(false);
       }
-    };
-
-    requestLocationPermission();
-  }, []);
-
-  const handleMenuPress = () => {
-    Alert.alert('Menu', 'Menu button pressed');
+    }
   };
 
-  const handleExpand = (expanded) => {
-    setIsExpanded(expanded);
+  const handleRouteSelect = (index) => {
+    setSelectedRoute(index);
   };
 
-  const handleBackPress = () => {
-    Keyboard.dismiss(); // Fermer le clavier
-    setIsExpanded(false);
+  const handleStartNavigation = () => {
+    const selectedRouteData = routes[selectedRoute];
+    setActiveRoute(selectedRouteData);
+    setShowRoutes(false);
+    unlockCamera(); // Unlock camera when starting navigation
+    updateCamera(location, destination); // Update camera position
+    startNavigation();
   };
+
+  if (!region) return null;
 
   return (
     <View style={styles.container}>
-      {isExpanded ? (
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-      ) : (
-        <BurgerMenu onPress={handleMenuPress} />
-      )}
-      <MapView
-        style={[styles.map, isExpanded && styles.mapHidden]}
-        provider={PROVIDER_GOOGLE} // Utiliser Google Maps
-        region={region}
-        onRegionChangeComplete={setRegion}
+      <Map
+        mapRef={mapRef}
+        location={location}
+        destination={destination}
+        heading={heading}
+        isNavigating={isNavigating}
+        activeRoute={activeRoute}
+        setRouteInfo={setRouteInfo}
+        setNextStep={setNextStep}
+        followsUserLocation={isCameraLocked}
       />
-      <BottomMenu onExpand={handleExpand} isExpanded={isExpanded} />
+
+      <SearchBar onPlaceSelect={handlePlaceSelect} />
+      <SpeedDisplay speed={speed} />
+      <SpeedLimitSign speedLimit={speedLimit} />
+      
+      {isLoading && (
+        <View style={[StyleSheet.absoluteFill, styles.loadingContainer]}>
+          <ActivityIndicator size="large" color="#3498db" />
+        </View>
+      )}
+
+      {showRoutes && routes.length > 0 && (
+        <RouteSelection
+          routes={routes}
+          selectedRoute={selectedRoute}
+          onRouteSelect={handleRouteSelect} // Simplified handler
+          location={location}
+          destination={destination}
+          mapRef={mapRef}
+          onStartNavigation={handleStartNavigation} // New handler with zoom
+        />
+      )}
+
+      {isNavigating && (
+        <NavigationInfo
+          nextStep={nextStep}
+          routeInfo={routeInfo}
+        />
+      )}
+
+      <FloatingMenu />
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  mapHidden: {
-    height: 0,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#000',
-  },
-});
-
-export default MapScreen;
+}

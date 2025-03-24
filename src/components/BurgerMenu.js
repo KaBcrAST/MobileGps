@@ -1,24 +1,50 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { View, Modal, Text, TouchableOpacity } from 'react-native';
+import styles from './styles';
 
-const BurgerMenu = ({ onPress }) => {
+const BurgerMenu = ({ visible, onClose }) => {
+  const menuItems = [
+    { id: 1, title: 'Paramètres', onPress: () => console.log('Settings') },
+    { id: 2, title: 'Historique', onPress: () => console.log('History') },
+    { id: 3, title: 'Favoris', onPress: () => console.log('Favorites') },
+    { id: 4, title: 'Aide', onPress: () => console.log('Help') },
+  ];
+
   return (
-    <View style={styles.container}>
-      <TouchableOpacity onPress={onPress}>
-        <Icon name="menu" size={30} color="#000" />
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity 
+        style={styles.overlay}
+        activeOpacity={1} 
+        onPress={onClose}
+      >
+        <View style={styles.menuContent}>
+          {menuItems.map(item => (
+            <TouchableOpacity 
+              key={item.id}
+              style={styles.menuItem}
+              onPress={() => {
+                item.onPress();
+                onClose();
+              }}
+            >
+              <Text style={styles.menuItemText}>{item.title}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity 
+            style={[styles.menuItem, styles.menuItemLast]}
+            onPress={onClose}
+          >
+            <Text style={styles.menuItemText}>Fermer</Text>
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
-    </View>
+    </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    zIndex: 1,
-  },
-});
 
 export default BurgerMenu;
