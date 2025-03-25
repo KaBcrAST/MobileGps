@@ -1,12 +1,43 @@
-import React, { useState } from 'react';
-import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import RegisterModal from './RegisterModal';
+import axios from 'axios';
+
+const OAUTH_URL = 'https://react-gpsapi.vercel.app/auth/google';
 
 const LoginModal = ({ visible, onClose, onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showRegister, setShowRegister] = useState(false);
+
+  useEffect(() => {
+    // Updated event subscription pattern
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      if (url.includes('auth/success')) {
+        onClose();
+        onLogin();
+      }
+    });
+
+    // Cleanup subscription
+    return () => {
+      subscription.remove();
+    };
+  }, [onLogin, onClose]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      const supported = await Linking.canOpenURL(OAUTH_URL);
+      if (supported) {
+        await Linking.openURL(OAUTH_URL);
+      } else {
+        console.error('URL cannot be opened:', OAUTH_URL);
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+    }
+  };
 
   return (
     <>
@@ -46,8 +77,11 @@ const LoginModal = ({ visible, onClose, onLogin }) => {
               <View style={styles.line} />
             </View>
 
-            {/* Social logins */}
-            <TouchableOpacity style={[styles.socialButton, styles.googleButton]}>
+            {/* Updated Google login button */}
+            <TouchableOpacity 
+              style={[styles.socialButton, styles.googleButton]}
+              onPress={handleGoogleLogin}
+            >
               <Ionicons name="logo-google" size={24} color="#DB4437" />
               <Text style={styles.socialButtonText}>Continuer avec Google</Text>
             </TouchableOpacity>

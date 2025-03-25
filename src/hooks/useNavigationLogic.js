@@ -8,7 +8,6 @@ export default function useNavigationLogic(location, mapRef) {
 
   const startNavigation = useCallback(() => {
     setIsNavigating(true);
-    // Add immediate camera focus here
     if (mapRef.current && location) {
       mapRef.current.animateCamera({
         center: {

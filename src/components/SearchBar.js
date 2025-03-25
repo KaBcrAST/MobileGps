@@ -3,7 +3,7 @@ import { View, TextInput, Animated, Dimensions, TouchableOpacity, ScrollView, Te
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.241:5000/api/search';
+const API_URL = 'https://react-gpsapi.vercel.app/api/search';
 const windowHeight = Dimensions.get('window').height;
 
 const SearchBar = ({ onPlaceSelect }) => {
@@ -44,6 +44,14 @@ const SearchBar = ({ onPlaceSelect }) => {
 
   const handleSelectPlace = async (prediction) => {
     try {
+      // Mettre à jour le texte de recherche immédiatement
+      setSearchQuery(prediction.description);
+      // Effacer les prédictions immédiatement
+      setPredictions([]);
+      // Fermer le clavier et la vue de recherche
+      toggleSearchPosition(false);
+
+      // Récupérer les détails du lieu
       const { data: details } = await axios.get(`${API_URL}/places/${prediction.place_id}`);
       
       if (details?.geometry?.location) {
@@ -51,9 +59,6 @@ const SearchBar = ({ onPlaceSelect }) => {
           latitude: details.geometry.location.lat,
           longitude: details.geometry.location.lng,
         });
-        setSearchQuery(prediction.description);
-        setPredictions([]);
-        toggleSearchPosition(false);
       }
     } catch (error) {
       console.error('Place details error:', error);

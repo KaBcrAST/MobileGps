@@ -3,7 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import Map from '../components/Map';
 import SearchBar from '../components/SearchBar';
 import RouteSelection from '../components/RouteSelection';
-import SpeedDisplay from '../components/SpeedDisplay';
+import BlockInfo from './BlockInfo';
 import NavigationStats from '../components/NavigationStats';
 import FloatingMenu from '../components/FloatingMenu';
 import useLocation from '../hooks/useLocation';
@@ -53,7 +53,7 @@ export default function MapScreen() {
       />
 
       <SearchBar onPlaceSelect={handlePlaceSelect} />
-      <SpeedDisplay 
+      <BlockInfo 
         speed={speed}
         location={location}
         destination={destination}

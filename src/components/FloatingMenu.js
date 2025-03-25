@@ -29,7 +29,9 @@ const FloatingMenu = () => {
         style={styles.menuButton} 
         onPress={toggleMenu}
       >
-        <Ionicons name="menu" size={30} color="#fff" />
+        <View style={styles.iconContainer}>
+          <Ionicons name="menu" size={24} color="#000" />
+        </View>
       </TouchableOpacity>
 
       <ProfileSection 
@@ -45,12 +47,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '8%',
     right: -60,
-    backgroundColor: '#000000',
-    padding: 10,
+    backgroundColor: '#FFFFFF', // Changed from #000000 to white
+    padding: 0, // Removed padding to better control centering
     borderRadius: 25,
     zIndex: 1001,
-    height: 45,
-    width: 45,
+    height: 50,
+    width: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Add shadow for better visibility
+    elevation: 4, // For Android
+    shadowColor: '#000', // For iOS
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  iconContainer: {
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },

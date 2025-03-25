@@ -4,7 +4,7 @@ import Map from '../components/Map';
 import SearchBar from '../components/SearchBar';
 import RouteSelection from '../components/RouteSelection';
 import NavigationInfo from '../components/NavigationInfo';
-import SpeedDisplay from '../components/SpeedDisplay';
+import BlockInfo from '../components/BlockInfo';
 import SpeedLimitSign from '../components/SpeedLimitSign';
 import FloatingMenu from '../components/FloatingMenu';
 import useLocation from '../hooks/useLocation';
@@ -121,8 +121,13 @@ export default function MapScreen() {
       />
 
       <SearchBar onPlaceSelect={handlePlaceSelect} />
-      <SpeedDisplay speed={speed} />
-      <SpeedLimitSign speedLimit={speedLimit} />
+      <BlockInfo 
+        speed={speed}
+        location={location}
+        destination={destination}
+        isNavigating={isNavigating}
+      />
+      <SpeedLimitSign location={location} />
       
       {isLoading && (
         <View style={[StyleSheet.absoluteFill, styles.loadingContainer]}>

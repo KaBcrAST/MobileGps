@@ -6,7 +6,7 @@ import axios from 'axios';
 import DirectionArrow from '../screens/DirectionArrow';
 import { mapStyles } from '../styles/globalStyles';
 
-const API_URL = 'http://192.168.1.241:5000/api/map';
+const API_URL = 'https://react-gpsapi.vercel.app/api/map';
 
 const Map = ({ 
   mapRef,
