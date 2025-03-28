@@ -50,6 +50,7 @@ export default function useNavigationLogic(location, mapRef) {
     routeInfo,
     setRouteInfo: setRouteInfoCallback,
     isNavigating,
+    setIsNavigating, // Make sure this is exported
     startNavigation,
     stopNavigation,
     heading

@@ -4,10 +4,22 @@ import axios from 'axios';
 
 const API_URL = 'https://react-gpsapi.vercel.app/api';
 
-const BlockInfo = ({ speed, location, destination, isNavigating }) => {
-  const [routeInfo, setRouteInfo] = useState(null);
+const BlockInfo = ({ 
+  speed, 
+  location, 
+  destination, 
+  isNavigating,
+  selectedRoute,
+  avoidTolls,
+  routeInfo: providedRouteInfo // Add this to accept route info from parent
+}) => {
+  const [localRouteInfo, setLocalRouteInfo] = useState(null);
+  
+  // Use provided route info if available, otherwise use local state
+  const routeInfo = providedRouteInfo || localRouteInfo;
 
   const getArrivalTime = (durationInSeconds) => {
+    if (!durationInSeconds) return '--:--';
     const now = new Date();
     const arrivalTime = new Date(now.getTime() + durationInSeconds * 1000);
     return arrivalTime.toLocaleTimeString('fr-FR', {
@@ -18,7 +30,8 @@ const BlockInfo = ({ speed, location, destination, isNavigating }) => {
 
   useEffect(() => {
     const fetchRouteInfo = async () => {
-      if (!location?.coords || !destination || !isNavigating) {
+      // Only fetch if we're navigating and don't have provided route info
+      if (!location?.coords || !destination || !isNavigating || providedRouteInfo) {
         return;
       }
 
@@ -26,58 +39,84 @@ const BlockInfo = ({ speed, location, destination, isNavigating }) => {
         const origin = `${location.coords.latitude},${location.coords.longitude}`;
         const dest = `${destination.latitude},${destination.longitude}`;
 
-        const response = await axios.get(`${API_URL}/route-info`, {
-          params: {
-            origin,
-            destination: dest
-          }
+        console.log('📍 Fetching route info:', { 
+          origin, 
+          dest, 
+          avoidTolls,
+          selectedRoute 
         });
 
-        if (response.data) {
-          setRouteInfo(response.data);
+        const response = await axios.get(`${API_URL}/info`, {
+          params: {
+            origin,
+            destination: dest,
+            avoid: avoidTolls ? 'tolls' : undefined,
+            routeIndex: selectedRoute
+          },
+          timeout: 5000
+        });
+
+        console.log('✅ Route info response:', response.data);
+
+        if (response.data?.distance?.value && response.data?.duration?.value) {
+          setLocalRouteInfo(response.data);
+        } else {
+          console.error('❌ Invalid route info format:', response.data);
         }
       } catch (error) {
-        console.error('Error fetching route info:', error);
+        console.error('❌ Error fetching route info:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
       }
     };
 
     fetchRouteInfo();
     const interval = setInterval(fetchRouteInfo, 30000);
     return () => clearInterval(interval);
-  }, [location, destination, isNavigating]);
+  }, [location, destination, isNavigating, selectedRoute, avoidTolls, providedRouteInfo]);
+
+  const renderRouteInfo = () => {
+    if (!routeInfo?.distance?.value || !routeInfo?.duration?.value) {
+      return null;
+    }
+
+    return (
+      <>
+        <Text style={styles.arrivalText}>
+          {getArrivalTime(routeInfo.duration.value)}
+        </Text>
+        <View style={styles.infoWrapper}>
+          <View style={styles.infoContainer}>
+            <Text style={styles.metricText}>
+              {(routeInfo.distance.value / 1000).toFixed(1)}
+            </Text>
+            <Text style={styles.unitLabel}>km</Text>
+          </View>
+          <View style={styles.infoContainer}>
+            <Text style={styles.metricText}>
+              {Math.floor(routeInfo.duration.value / 60)}
+            </Text>
+            <Text style={styles.unitLabel}>min</Text>
+          </View>
+        </View>
+      </>
+    );
+  };
 
   return (
     <>
       <View style={styles.speedMeter}>
         <View style={styles.speedContainer}>
-          <Text style={styles.speedText}>{Math.round(speed)}</Text>
+          <Text style={styles.speedText}>{Math.round(speed) || 0}</Text>
           <Text style={styles.unitText}>km/h</Text>
         </View>
       </View>
 
       <View style={styles.whiteBar}>
         <View style={styles.barContent}>
-          {isNavigating && routeInfo && (
-            <>
-              <Text style={styles.arrivalText}>
-                {getArrivalTime(routeInfo.duration.value)}
-              </Text>
-              <View style={styles.infoWrapper}>
-                <View style={styles.infoContainer}>
-                  <Text style={styles.metricText}>
-                    {(routeInfo.distance.value / 1000).toFixed(1)}
-                  </Text>
-                  <Text style={styles.unitLabel}>km</Text>
-                </View>
-                <View style={styles.infoContainer}>
-                  <Text style={styles.metricText}>
-                    {routeInfo.duration.value / 60 | 0}
-                  </Text>
-                  <Text style={styles.unitLabel}>min</Text>
-                </View>
-              </View>
-            </>
-          )}
+          {isNavigating && renderRouteInfo()}
         </View>
       </View>
     </>

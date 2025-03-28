@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, ActivityIndicator, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import axios from 'axios';
 import DirectionArrow from '../screens/DirectionArrow';
@@ -82,6 +82,17 @@ const Map = ({
           mode="DRIVING"
           resetOnChange={false}
           onReady={setRouteInfo}
+        />
+      )}
+
+      {activeRoute?.coordinates && (
+        <Polyline
+          coordinates={activeRoute.coordinates}
+          strokeColor="#3498db"
+          strokeWidth={6}
+          lineCap="round"
+          lineJoin="round"
+          geodesic={true}
         />
       )}
 

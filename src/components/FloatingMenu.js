@@ -2,8 +2,9 @@ import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, Animated, StyleSheet, Text, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileSection from './ProfileSection';
+import NavigationSettings from './NavigationSettings';
 
-const FloatingMenu = () => {
+const FloatingMenu = ({ onTollPreferenceChange, avoidTolls }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const slideAnim = useRef(new Animated.Value(-300)).current; // Changed from -800
@@ -22,7 +23,8 @@ const FloatingMenu = () => {
   return (
     <Animated.View 
       style={[styles.slideMenu, {
-        transform: [{ translateX: slideAnim }]
+        transform: [{ translateX: slideAnim }],
+        paddingLeft: isOpen ? 20 : 0 // Add padding only when menu is open
       }]}
     >
       <TouchableOpacity 
@@ -37,6 +39,10 @@ const FloatingMenu = () => {
       <ProfileSection 
         isLoggedIn={isLoggedIn}
         onLogin={() => console.log('Login pressed')}
+      />
+      <NavigationSettings 
+        avoidTolls={avoidTolls}
+        onTollPreferenceChange={onTollPreferenceChange}
       />
     </Animated.View>
   );
@@ -87,7 +93,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    marginTop: 40,
+    marginTop: 60, // Increased from 40 to give more space at top
   },
   profileImage: {
     width: 60,
@@ -97,6 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    overflow: 'hidden', // Prevent image from overflowing
   },
   welcomeText: {
     fontSize: 24,
