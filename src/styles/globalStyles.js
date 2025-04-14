@@ -179,6 +179,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
+
+  statsBlock: {
+    position: 'absolute',
+    top: '40%',
+    alignSelf: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    borderRadius: 15,
+    minWidth: 200,
+    elevation: 5,
+    zIndex: 1000
+  }
 });
 
 export const mapStyles = StyleSheet.create({

@@ -171,3 +171,35 @@ export const navigationService = {
     return `${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
   }
 };
+
+const fetchRouteDetails = async (origin, destination, index) => {
+  try {
+    const response = await axios.get(`${API_URL}/navigation/route`, {
+      params: {
+        origin,
+        destination,
+        routeIndex: index
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch route details:', error);
+    return null;
+  }
+};
+
+export const getRouteDetails = async (origin, destination) => {
+  try {
+    const response = await axios.get(`${API_URL}/navigation/details`, {
+      params: {
+        origin: `${origin.latitude},${origin.longitude}`,
+        destination: `${destination.latitude},${destination.longitude}`
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch route details:', error);
+    return null;
+  }
+};

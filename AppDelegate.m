@@ -5,7 +5,7 @@
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  [GMSServices provideAPIKey:@"AIzaSyAMthwpI5QDvhvxS-fuqVasqK3vr3U8dms"];
+  [GMSServices provideAPIKey:@"AIzaSyBtLW4mbOZNMU5GZyF502KnybtvteVAwlc"];
   ...
   return YES;
 }

@@ -1,10 +1,43 @@
 import { useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function useNavigationLogic(location, mapRef) {
   const [destination, setDestination] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [heading, setHeading] = useState(0);
+  const [avoidTolls, setAvoidTolls] = useState(false);
+
+  // Load saved preference on mount
+  useEffect(() => {
+    const loadTollPreference = async () => {
+      try {
+        const savedPreference = await AsyncStorage.getItem('avoidTolls');
+        if (savedPreference !== null) {
+          setAvoidTolls(savedPreference === 'true');
+        }
+      } catch (error) {
+        console.error('Error loading toll preference:', error);
+      }
+    };
+
+    loadTollPreference();
+  }, []);
+
+  // Save preference when it changes
+  const handleTollPreferenceChange = async (newValue) => {
+    try {
+      await AsyncStorage.setItem('avoidTolls', String(newValue));
+      setAvoidTolls(newValue);
+      
+      // Recalculate route if we have destination
+      if (location && destination) {
+        // ... existing route recalculation code ...
+      }
+    } catch (error) {
+      console.error('Error saving toll preference:', error);
+    }
+  };
 
   const startNavigation = useCallback(() => {
     setIsNavigating(true);
@@ -53,6 +86,8 @@ export default function useNavigationLogic(location, mapRef) {
     setIsNavigating, // Make sure this is exported
     startNavigation,
     stopNavigation,
-    heading
+    heading,
+    avoidTolls,
+    handleTollPreferenceChange,
   };
 }

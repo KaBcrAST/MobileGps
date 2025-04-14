@@ -2,12 +2,12 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import Map from '../components/Map';
 import SearchBar from '../components/SearchBar';
-import RouteSelection from '../components/RouteSelection';
 import NavigationInfo from '../components/NavigationInfo';
 import BlockInfo from '../components/BlockInfo';
 import SpeedLimitSign from '../components/SpeedLimitSign';
 import FloatingMenu from '../components/FloatingMenu';
-import NavigationSettings from '../components/NavigationSettings';
+import ReportMenu from '../components/ReportMenu';
+import RoutePreview from '../components/RoutePreview/RoutePreview';
 import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
 import useCameraControl from '../hooks/useCameraControl';
@@ -26,7 +26,9 @@ export default function MapScreen() {
     setIsNavigating, // Add this
     startNavigation, 
     stopNavigation, 
-    heading 
+    heading,
+    avoidTolls,
+    handleTollPreferenceChange 
   } = useNavigationLogic(location, mapRef);
   const { isCameraLocked, unlockCamera, updateCamera } = useCameraControl(mapRef);
   
@@ -36,7 +38,8 @@ export default function MapScreen() {
   const [showRoutes, setShowRoutes] = useState(false);
   const [activeRoute, setActiveRoute] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [avoidTolls, setAvoidTolls] = useState(false);
+  const [previewRoutes, setPreviewRoutes] = useState([]);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
 
   const handlePlaceSelect = async (dest) => {
     setDestination(dest);
@@ -112,44 +115,37 @@ export default function MapScreen() {
     }
   };
 
-  const handleStartNavigation = (route) => {
-    if (!route) {
-      console.error('❌ No route provided to start navigation');
-      return;
-    }
-  
-    console.log('🚗 Starting navigation with route:', {
-      summary: route.summary,
-      distance: route.distance?.value,
-      duration: route.duration?.value
-    });
-  
-    setActiveRoute(route);
+  const handleStartNavigation = (selectedRoute) => {
+    console.log('Starting navigation with route:', selectedRoute);
+    setActiveRoute(selectedRoute);
+    setIsNavigating(true);
     setShowRoutes(false);
-    startNavigation(); // Use this instead of setIsNavigating
   };
 
-  const handleTollPreferenceChange = async (newValue) => {
-    setAvoidTolls(newValue);
-    if (location && destination) {
-      try {
-        setIsLoading(true);
-        const result = await navigationService.getRoute(
-          location.coords,
-          destination,
-          { avoidTolls: newValue }
-        );
-        
-        if (result.status === 'OK' && result.routes?.length > 0) {
-          setRoutes(result.routes);
-          setShowRoutes(true);
-        }
-      } catch (error) {
-        console.error('Error recalculating route:', error);
-        Alert.alert('Erreur', 'Impossible de recalculer l\'itinéraire');
-      } finally {
-        setIsLoading(false);
+  const handleRouteReady = (routeData) => {
+    if (routeData.startNavigation) {
+      // Démarrer la navigation
+      setActiveRoute(routeData);
+      setShowRoutes(false);
+      startNavigation();
+    } else {
+      // Mise à jour normale des informations de route
+      setRouteInfo(routeData);
+      if (routeData.coordinates) {
+        mapRef.current?.fitToCoordinates(routeData.coordinates, {
+          edgePadding: { top: 100, right: 50, bottom: 300, left: 50 },
+          animated: true
+        });
       }
+    }
+  };
+
+  const handleRoutePreview = (routeData) => {
+    if (routeData.startNavigation) {
+      handleStartNavigation(routeData);
+    } else {
+      setPreviewRoutes(routeData.routes || []);
+      setSelectedRouteIndex(routeData.selectedIndex || 0);
     }
   };
 
@@ -168,16 +164,24 @@ export default function MapScreen() {
         setNextStep={setNextStep}
         followsUserLocation={isCameraLocked}
       />
-
+      
+      {showRoutes && !isNavigating && (
+        <RoutePreview
+          origin={location?.coords}
+          destination={destination}
+          onRouteSelect={(route) => {
+            setSelectedRoute(route);
+          }}
+          onStartNavigation={handleStartNavigation}
+        />
+      )}
+      
       <SearchBar onPlaceSelect={handlePlaceSelect} />
       <BlockInfo 
         speed={speed}
-        location={location}
-        destination={destination}
         isNavigating={isNavigating}
-        selectedRoute={selectedRoute}
-        avoidTolls={avoidTolls}
-        routeInfo={routes[selectedRoute]} // Add this line
+        routeInfo={routeInfo} // Passer directement routeInfo
+        activeRoute={activeRoute} // Ajouter activeRoute pour avoir les infos de la route sélectionnée
       />
       <SpeedLimitSign location={location} />
       
@@ -185,18 +189,6 @@ export default function MapScreen() {
         <View style={[StyleSheet.absoluteFill, styles.loadingContainer]}>
           <ActivityIndicator size="large" color="#3498db" />
         </View>
-      )}
-
-      {showRoutes && routes.length > 0 && (
-        <RouteSelection
-          routes={routes}
-          selectedRoute={selectedRoute}
-          onRouteSelect={handleRouteSelect} // Simplified handler
-          location={location}
-          destination={destination}
-          mapRef={mapRef}
-          onStartNavigation={handleStartNavigation} // New handler with zoom
-        />
       )}
 
       {isNavigating && (
@@ -208,8 +200,10 @@ export default function MapScreen() {
 
       <FloatingMenu 
         onTollPreferenceChange={handleTollPreferenceChange}
-        avoidTolls={avoidTolls}  // Pass the state
+        avoidTolls={avoidTolls}
       />
+
+      <ReportMenu location={location} />
     </View>
   );
 }

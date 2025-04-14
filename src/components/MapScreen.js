@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import Map from '../components/Map';
 import SearchBar from '../components/SearchBar';
@@ -8,14 +8,13 @@ import NavigationStats from '../components/NavigationStats';
 import FloatingMenu from '../components/FloatingMenu';
 import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
-import useCameraControl from '../hooks/useCameraControl';
 import styles from '../styles/globalStyles';
 import StatsBlock from '../components/StatsBlock';
 import NavigationDataDisplay from './NavigationDataDisplay';
 
 export default function MapScreen() {
   const mapRef = useRef(null);
-  const { location, region, speed } = useLocation(mapRef);
+  const { location, speed } = useLocation(mapRef); // Supprimé region car non utilisé
   const { 
     destination, 
     setDestination, 
@@ -23,20 +22,16 @@ export default function MapScreen() {
     setRouteInfo,
     isNavigating, 
     startNavigation, 
-    stopNavigation, 
     heading 
-  } = useNavigationLogic(location, mapRef);
+  } = useNavigationLogic(location, mapRef); // Supprimé stopNavigation car non utilisé
 
   const handleStartNavigation = () => {
     const selectedRouteData = routes[selectedRoute];
     setActiveRoute(selectedRouteData);
     setShowRoutes(false);
-    unlockCamera(); // Now this will work
+    unlockCamera();
     startNavigation();
   };
-
-  console.log('routeInfo:', routeInfo); // Debug log
-  console.log('isNavigating:', isNavigating); // Debug log
 
   return (
     <View style={styles.container}>
@@ -48,7 +43,6 @@ export default function MapScreen() {
         isNavigating={isNavigating}
         activeRoute={activeRoute}
         setRouteInfo={setRouteInfo}
-        setNextStep={setNextStep}
         followsUserLocation={isCameraLocked}
       />
 
@@ -74,17 +68,7 @@ export default function MapScreen() {
       {isNavigating && (
         <StatsBlock 
           routeInfo={routeInfo}
-          style={{
-            position: 'absolute',
-            top: '40%',
-            alignSelf: 'center',
-            backgroundColor: '#FFFFFF',
-            padding: 20,
-            borderRadius: 15,
-            minWidth: 200,
-            elevation: 5,
-            zIndex: 1000
-          }}
+          style={styles.statsBlock} // Déplacé dans globalStyles
         />
       )}
 
@@ -96,8 +80,8 @@ export default function MapScreen() {
 
       {showRoutes && routes.length > 0 && (
         <RouteSelection
-          routes={routes}
-          selectedRoute={selectedRoute}
+          origin={location?.coords}
+          destination={destination}
           onRouteSelect={handleRouteSelect}
           onStartNavigation={handleStartNavigation}
         />
