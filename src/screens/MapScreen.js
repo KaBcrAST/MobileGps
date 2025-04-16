@@ -12,25 +12,24 @@ import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
 import useCameraControl from '../hooks/useCameraControl';
 import styles from '../styles/globalStyles';
-import { navigationService, decodePolyline } from '../services/navigationService';
+import { navigationService } from '../services/navigationService';
 
 export default function MapScreen() {
   const mapRef = useRef(null);
-  const { location, region, speed, speedLimit } = useLocation(mapRef);
+  const { location, region, speed } = useLocation(mapRef);
   const { 
     destination, 
     setDestination, 
     routeInfo, 
     setRouteInfo,
     isNavigating,
-    setIsNavigating, // Add this
+    setIsNavigating,
     startNavigation, 
-    stopNavigation, 
     heading,
     avoidTolls,
     handleTollPreferenceChange 
   } = useNavigationLogic(location, mapRef);
-  const { isCameraLocked, unlockCamera, updateCamera } = useCameraControl(mapRef);
+  const { isCameraLocked, unlockCamera } = useCameraControl(mapRef);
   
   const [nextStep, setNextStep] = useState(null);
   const [routes, setRoutes] = useState([]);
@@ -38,8 +37,6 @@ export default function MapScreen() {
   const [showRoutes, setShowRoutes] = useState(false);
   const [activeRoute, setActiveRoute] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [previewRoutes, setPreviewRoutes] = useState([]);
-  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
 
   const handlePlaceSelect = async (dest) => {
     setDestination(dest);
@@ -116,7 +113,6 @@ export default function MapScreen() {
   };
 
   const handleStartNavigation = (selectedRoute) => {
-    console.log('Starting navigation with route:', selectedRoute);
     setActiveRoute(selectedRoute);
     setIsNavigating(true);
     setShowRoutes(false);
@@ -169,9 +165,7 @@ export default function MapScreen() {
         <RoutePreview
           origin={location?.coords}
           destination={destination}
-          onRouteSelect={(route) => {
-            setSelectedRoute(route);
-          }}
+          onRouteSelect={setSelectedRoute}
           onStartNavigation={handleStartNavigation}
         />
       )}
@@ -180,8 +174,8 @@ export default function MapScreen() {
       <BlockInfo 
         speed={speed}
         isNavigating={isNavigating}
-        routeInfo={routeInfo} // Passer directement routeInfo
-        activeRoute={activeRoute} // Ajouter activeRoute pour avoir les infos de la route sélectionnée
+        routeInfo={routeInfo}
+        activeRoute={activeRoute}
       />
       <SpeedLimitSign location={location} />
       

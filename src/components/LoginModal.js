@@ -1,38 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, View, TextInput, TouchableOpacity, Text, StyleSheet, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { Modal, View, TouchableOpacity, Text, StyleSheet, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
 import RegisterModal from './RegisterModal';
-import axios from 'axios';
+import CryptoJS from 'crypto-js';
 
-const OAUTH_URL = 'https://react-gpsapi.vercel.app/auth/google';
-
-const LoginModal = ({ visible, onClose, onLogin }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const LoginModal = ({ visible, onClose }) => {
+  const { login } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    // Updated event subscription pattern
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-      if (url.includes('auth/success')) {
+  const hashPassword = (password) => {
+    const hashedPassword = CryptoJS.SHA256(password).toString();
+    console.log('Password after hash:', hashedPassword); // Debug
+    return hashedPassword;
+  };
+
+  const handleClassicLogin = async () => {
+    try {
+      const hashedPassword = hashPassword(formData.password);
+      console.log('Attempting login with hash:', hashedPassword); // Debug
+
+      const secureFormData = {
+        email: formData.email.toLowerCase().trim(),
+        password: hashedPassword
+      };
+
+      const response = await fetch('https://react-gpsapi.vercel.app/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(secureFormData),
+      });
+
+      const data = await response.json();
+      console.log('Server response:', data); // Debug
+
+      if (data.success) {
+        await login(data);
         onClose();
-        onLogin();
+      } else {
+        setErrors({ submit: data.message || 'Email ou mot de passe incorrect' });
       }
-    });
-
-    // Cleanup subscription
-    return () => {
-      subscription.remove();
-    };
-  }, [onLogin, onClose]);
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({ submit: 'Erreur de connexion au serveur' });
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
-      const supported = await Linking.canOpenURL(OAUTH_URL);
-      if (supported) {
-        await Linking.openURL(OAUTH_URL);
-      } else {
-        console.error('URL cannot be opened:', OAUTH_URL);
+      const result = await WebBrowser.openAuthSessionAsync(
+        'https://react-gpsapi.vercel.app/auth/google',
+        'gpsapp://auth'
+      );
+
+      if (result.type === 'success') {
+        const data = result.url.split('?')[1];
+        const params = new URLSearchParams(data);
+        const token = params.get('token');
+        const user = JSON.parse(params.get('user'));
+
+        if (token) {
+          await login({ token, user });
+          onClose();
+        }
       }
     } catch (error) {
       console.error('Google login error:', error);
@@ -40,81 +78,77 @@ const LoginModal = ({ visible, onClose, onLogin }) => {
   };
 
   return (
-    <>
-      <Modal visible={visible && !showRegister} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <View style={styles.modalContent}>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Ionicons name="close" size={24} color="#333" />
-            </TouchableOpacity>
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={styles.overlay}>
+        <View style={styles.modalContent}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <Ionicons name="close" size={24} color="#333" />
+          </TouchableOpacity>
 
-            <Text style={styles.title}>Connexion</Text>
+          <Text style={styles.title}>Connexion</Text>
 
-            {/* Email login form */}
+          <TouchableOpacity 
+            style={styles.googleButton}
+            onPress={handleGoogleLogin}
+          >
+            <Ionicons name="logo-google" size={24} color="#DB4437" />
+            <Text style={styles.buttonText}>Continuer avec Google</Text>
+          </TouchableOpacity>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>ou</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
+              style={[styles.input, errors.email && styles.inputError]}
+              placeholder="exemple@email.com"
+              value={formData.email}
+              onChangeText={(text) => setFormData({...formData, email: text})}
               keyboardType="email-address"
               autoCapitalize="none"
             />
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Mot de passe</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Mot de passe"
-              value={password}
-              onChangeText={setPassword}
+              style={[styles.input, errors.password && styles.inputError]}
+              placeholder="Votre mot de passe"
+              value={formData.password}
+              onChangeText={(text) => setFormData({...formData, password: text})}
               secureTextEntry
             />
-            <TouchableOpacity style={styles.loginButton} onPress={() => onLogin(email, password)}>
-              <Text style={styles.loginButtonText}>Se connecter</Text>
-            </TouchableOpacity>
+            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+          </View>
 
-            {/* Divider */}
-            <View style={styles.divider}>
-              <View style={styles.line} />
-              <Text style={styles.dividerText}>ou</Text>
-              <View style={styles.line} />
-            </View>
+          {errors.submit && <Text style={styles.submitError}>{errors.submit}</Text>}
 
-            {/* Updated Google login button */}
-            <TouchableOpacity 
-              style={[styles.socialButton, styles.googleButton]}
-              onPress={handleGoogleLogin}
-            >
-              <Ionicons name="logo-google" size={24} color="#DB4437" />
-              <Text style={styles.socialButtonText}>Continuer avec Google</Text>
-            </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.loginButton}
+            onPress={handleClassicLogin}
+          >
+            <Text style={styles.loginButtonText}>Se connecter</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.socialButton, styles.phoneButton]}>
-              <Ionicons name="call" size={24} color="#333" />
-              <Text style={styles.socialButtonText}>Continuer avec le téléphone</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.registerLink}
-              onPress={() => setShowRegister(true)}
-            >
-              <Text style={styles.linkText}>
-                Pas encore de compte ? S'inscrire
-              </Text>
+          <View style={styles.registerContainer}>
+            <Text style={styles.registerText}>Pas encore de compte ?</Text>
+            <TouchableOpacity onPress={() => setShowRegister(true)}>
+              <Text style={styles.registerLink}>S'inscrire</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </Modal>
 
-      <RegisterModal 
-        visible={visible && showRegister}
-        onClose={() => {
-          setShowRegister(false);
-          onClose();
-        }}
-        onRegister={(email, username, password) => {
-          console.log('Register:', { email, username, password });
-          setShowRegister(false);
-        }}
-      />
-    </>
+          <RegisterModal 
+            visible={showRegister}
+            onClose={() => setShowRegister(false)}
+          />
+        </View>
+      </View>
+    </Modal>
   );
 };
 
@@ -130,79 +164,99 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 10,
     padding: 20,
-    position: 'relative',
   },
   closeButton: {
-    position: 'absolute',
-    right: 10,
-    top: 10,
+    alignSelf: 'flex-end',
     padding: 5,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 30,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
-    marginVertical: 10,
-  },
-  loginButton: {
-    backgroundColor: '#000',
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     padding: 15,
     borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    marginLeft: 15,
+    fontSize: 16,
+    color: '#333',
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 20,
   },
-  loginButtonText: {
-    color: '#FFF',
-    textAlign: 'center',
-    fontWeight: 'bold',
+  registerText: {
+    color: '#666',
+  },
+  registerLink: {
+    color: '#4285f4',
+    marginLeft: 5,
+    fontWeight: '600',
   },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 20,
   },
-  line: {
+  dividerLine: {
     flex: 1,
     height: 1,
     backgroundColor: '#ddd',
   },
   dividerText: {
-    marginHorizontal: 10,
     color: '#666',
+    paddingHorizontal: 10,
+    fontSize: 14,
   },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 5,
-    marginVertical: 8,
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 5,
+  },
+  input: {
     borderWidth: 1,
     borderColor: '#ddd',
-  },
-  googleButton: {
-    backgroundColor: '#fff',
-  },
-  phoneButton: {
-    backgroundColor: '#fff',
-  },
-  socialButtonText: {
-    marginLeft: 15,
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
-    color: '#333',
   },
-  registerLink: {
-    marginTop: 20,
+  inputError: {
+    borderColor: '#ff4444',
+  },
+  errorText: {
+    color: '#ff4444',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  submitError: {
+    color: '#ff4444',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  loginButton: {
+    backgroundColor: '#4285f4',
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
+    marginTop: 10,
   },
-  linkText: {
-    color: '#0000EE',
-    textDecorationLine: 'underline',
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   }
 });
 

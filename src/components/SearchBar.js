@@ -44,14 +44,10 @@ const SearchBar = ({ onPlaceSelect }) => {
 
   const handleSelectPlace = async (prediction) => {
     try {
-      // Mettre à jour le texte de recherche immédiatement
       setSearchQuery(prediction.description);
-      // Effacer les prédictions immédiatement
       setPredictions([]);
-      // Fermer le clavier et la vue de recherche
       toggleSearchPosition(false);
 
-      // Récupérer les détails du lieu
       const { data: details } = await axios.get(`${API_URL}/places/${prediction.place_id}`);
       
       if (details?.geometry?.location) {

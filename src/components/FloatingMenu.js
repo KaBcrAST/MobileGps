@@ -6,7 +6,6 @@ import NavigationSettings from './NavigationSettings';
 
 const FloatingMenu = ({ onTollPreferenceChange, avoidTolls }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const slideAnim = useRef(new Animated.Value(-300)).current;
 
   const toggleMenu = () => {
@@ -32,10 +31,8 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls }) => {
         </View>
       </TouchableOpacity>
 
-      <ProfileSection 
-        isLoggedIn={isLoggedIn}
-        onLogin={() => console.log('Login pressed')}
-      />
+      <ProfileSection />
+      
       <NavigationSettings 
         avoidTolls={avoidTolls}
         onTollPreferenceChange={onTollPreferenceChange}

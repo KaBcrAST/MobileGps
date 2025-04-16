@@ -1,34 +1,56 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
+import SettingsModal from './SettingsModal';
 
-const ProfileSection = ({ isLoggedIn, onLogin }) => {
-  const [showLoginModal, setShowLoginModal] = useState(false);
+const ProfileSection = () => {
+  const { user } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  console.log('User data:', user); // Pour déboguer
 
   return (
     <View style={styles.profileSection}>
       <View style={styles.profileImage}>
-        <Ionicons name="person" size={40} color="#666" />
+        {user?.picture ? (
+          <Image 
+            source={{ uri: user.picture }} 
+            style={styles.profilePicture}
+          />
+        ) : (
+          <Ionicons name="person" size={40} color="#666" />
+        )}
       </View>
-      {isLoggedIn ? (
+      {user ? (
         <>
-          <Text style={styles.welcomeText}>Bonjour</Text>
-          <TouchableOpacity style={styles.settingsButton}>
+          <Text style={styles.welcomeText}>
+            Bonjour {user.name}
+          </Text>
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => setShowSettings(true)}
+          >
             <Ionicons name="settings" size={24} color="#333" />
           </TouchableOpacity>
+          <SettingsModal 
+            visible={showSettings}
+            onClose={() => setShowSettings(false)}
+          />
         </>
       ) : (
         <>
-          <TouchableOpacity onPress={() => setShowLoginModal(true)}>
+          <TouchableOpacity onPress={() => setShowLogin(true)}>
             <Text style={styles.loginText}>Se connecter</Text>
           </TouchableOpacity>
           <LoginModal 
-            visible={showLoginModal}
-            onClose={() => setShowLoginModal(false)}
+            visible={showLogin}
+            onClose={() => setShowLogin(false)}
             onLogin={(email, password) => {
               console.log('Login attempt:', email, password);
-              setShowLoginModal(false);
+              setShowLogin(false);
             }}
           />
         </>
@@ -54,6 +76,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+  },
+  profilePicture: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 30,
   },
   welcomeText: {
     fontSize: 24,
