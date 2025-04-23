@@ -29,16 +29,31 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (data) => {
     try {
-      // Stocker le token
-      await AsyncStorage.setItem('auth_token', data.token);
-      // Stocker les données utilisateur
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      console.log('Login data received:', data); // Debug log
 
-      setToken(data.token);
+      // If we don't have _id in the user object, try to fetch user data
+      if (data.user && !data.user._id) {
+        const response = await fetch('https://react-gpsapi.vercel.app/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${data.token}`
+          }
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          data.user = { ...data.user, _id: userData._id };
+        }
+      }
+
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      await AsyncStorage.setItem('token', data.token);
+      
+      console.log('Stored user data:', data.user); // Debug log
+      
       setUser(data.user);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
     }
   };
 

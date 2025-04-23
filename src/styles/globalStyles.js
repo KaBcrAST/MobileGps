@@ -190,7 +190,45 @@ const styles = StyleSheet.create({
     minWidth: 200,
     elevation: 5,
     zIndex: 1000
-  }
+  },
+
+  historyContainer: {
+    position: 'absolute',
+    top: 80, // Ajustez selon votre layout
+    left: 10,
+    right: 10,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    maxHeight: 200,
+    zIndex: 1
+  },
+
+  historyWrapper: {
+    position: 'absolute',
+    top: 100, // Ajustez selon votre layout
+    left: 10,
+    right: 10,
+    zIndex: 1,
+  },
+  
+  historyContainer: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
 });
 
 export const mapStyles = StyleSheet.create({

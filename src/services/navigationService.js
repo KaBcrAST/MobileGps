@@ -53,7 +53,7 @@ export const decodePolyline = (encoded) => {
 export const navigationService = {
   decodePolyline,
 
-  async getRoute(origin, destination, options = {}) {
+  async getRoute(origin, destination) {
     if (!origin || !destination) {
       throw new Error('Origin and destination are required');
     }
@@ -64,15 +64,13 @@ export const navigationService = {
 
       console.log('🚗 Requesting route:', {
         origin: formattedOrigin,
-        destination: formattedDestination,
-        avoidTolls: options.avoidTolls
+        destination: formattedDestination
       });
 
       const response = await axios.get(`${API_URL}/route`, {
         params: {
           origin: formattedOrigin,
-          destination: formattedDestination,
-          avoid: options.avoidTolls ? 'tolls' : undefined
+          destination: formattedDestination
         },
         timeout: 10000
       });

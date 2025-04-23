@@ -1,93 +1,69 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
-export default function useNavigationLogic(location, mapRef) {
+const API_URL = 'https://react-gpsapi.vercel.app/api';
+
+const useNavigationLogic = (location, mapRef) => {
   const [destination, setDestination] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [heading, setHeading] = useState(0);
-  const [avoidTolls, setAvoidTolls] = useState(false);
+  const [activeRoute, setActiveRoute] = useState(null);
 
-  // Load saved preference on mount
-  useEffect(() => {
-    const loadTollPreference = async () => {
-      try {
-        const savedPreference = await AsyncStorage.getItem('avoidTolls');
-        if (savedPreference !== null) {
-          setAvoidTolls(savedPreference === 'true');
-        }
-      } catch (error) {
-        console.error('Error loading toll preference:', error);
-      }
-    };
+  const fetchRoute = async () => {
+    if (!location?.coords || !destination) return;
 
-    loadTollPreference();
-  }, []);
-
-  // Save preference when it changes
-  const handleTollPreferenceChange = async (newValue) => {
     try {
-      await AsyncStorage.setItem('avoidTolls', String(newValue));
-      setAvoidTolls(newValue);
+      const response = await axios.get(`${API_URL}/navigation/route`, {
+        params: {
+          origin: `${location.coords.latitude},${location.coords.longitude}`,
+          destination: `${destination.latitude},${destination.longitude}`
+        }
+      });
       
-      // Recalculate route if we have destination
-      if (location && destination) {
-        // ... existing route recalculation code ...
+      if (response.data.routes?.[0]) {
+        setActiveRoute(response.data.routes[0]);
+        setRouteInfo(response.data.routes[0]);
       }
     } catch (error) {
-      console.error('Error saving toll preference:', error);
+      console.error('Error fetching route:', error);
     }
   };
 
-  const startNavigation = useCallback(() => {
-    setIsNavigating(true);
-    if (mapRef.current && location) {
-      mapRef.current.animateCamera({
-        center: {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        },
-        heading: location.coords.heading,
-        pitch: 60,
-        zoom: 18,
-        altitude: 500,
-      }, {
-        duration: 300
-      });
-    }
-  }, [location]);
-
-  const stopNavigation = () => {
+  const endNavigation = () => {
     setIsNavigating(false);
     setDestination(null);
     setRouteInfo(null);
-  };
-
-  const setRouteInfoCallback = useCallback((info) => {
-    if (info?.distance?.value && info?.duration?.value) {
-      const distanceKm = (info.distance.value / 1000).toFixed(1);
-      const durationMin = Math.round(info.duration.value / 60);
-      
-      console.log('Navigation Stats:', {
-        distance: `${distanceKm} km`,
-        duration: `${durationMin} min`,
-        rawInfo: info
+    setActiveRoute(null);
+    
+    // Reset map view
+    if (location?.coords && mapRef.current) {
+      mapRef.current.animateCamera({
+        center: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude
+        },
+        pitch: 0,
+        heading: 0,
+        zoom: 15,
+        duration: 1000
       });
     }
-    setRouteInfo(info);
-  }, []);
+  };
 
   return {
     destination,
     setDestination,
     routeInfo,
-    setRouteInfo: setRouteInfoCallback,
+    setRouteInfo,
     isNavigating,
-    setIsNavigating, // Make sure this is exported
-    startNavigation,
-    stopNavigation,
+    setIsNavigating,
     heading,
-    avoidTolls,
-    handleTollPreferenceChange,
+    activeRoute,
+    setActiveRoute,
+    endNavigation
   };
-}
+};
+
+export default useNavigationLogic;

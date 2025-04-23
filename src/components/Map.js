@@ -50,6 +50,7 @@ const Map = ({
   const [trafficInfo, setTrafficInfo] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [notifiedClusters] = useState(() => new Set());
+  const [showRoute, setShowRoute] = useState(true);
 
   useEffect(() => {
     const getMapConfig = async () => {
@@ -162,6 +163,14 @@ const Map = ({
     }
   }, [isPreviewMode, location, destination]);
 
+  useEffect(() => {
+    if (!isNavigating) {
+      setShowRoute(false);
+    } else {
+      setShowRoute(true);
+    }
+  }, [isNavigating]);
+
   if (loading || !mapConfig) {
     return (
       <View style={[mapStyles.map, mapStyles.center]}>
@@ -192,19 +201,21 @@ const Map = ({
         }}
         initialRegion={mapConfig.region}
       >
-        <RoutePolylines 
-          showRoutes={showRoutes}
-          isNavigating={isNavigating}
-          routes={routes}
-          selectedRoute={selectedRoute}
-          onRouteSelect={onRouteSelect}
-          location={location}
-          destination={destination}
-          activeRoute={activeRoute}
-          setRouteInfo={setRouteInfo}
-          isPreviewMode={isPreviewMode}
-          mapRef={mapRef}
-        />
+        {showRoute && (
+          <RoutePolylines 
+            showRoutes={showRoutes}
+            isNavigating={isNavigating}
+            routes={routes}
+            selectedRoute={selectedRoute}
+            onRouteSelect={onRouteSelect}
+            location={location}
+            destination={destination}
+            activeRoute={activeRoute}
+            setRouteInfo={setRouteInfo}
+            isPreviewMode={isPreviewMode}
+            mapRef={mapRef}
+          />
+        )}
 
         <LocationMarker 
           location={location} 
