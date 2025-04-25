@@ -1,7 +1,7 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider } from './src/contexts/AuthContext';
-import MapScreen from './src/screens/MapScreen';
+import MapScreen from './src/screens/NavigationMainScreen';
 import OAuthRedirect from './src/components/OAuthRedirect';
 
 const Stack = createNativeStackNavigator();

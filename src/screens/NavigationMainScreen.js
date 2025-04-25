@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { View, ActivityIndicator, StyleSheet, Alert, TouchableOpacity, Text } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import Map from '../components/Map';
+import Map from '../components/RealTimeNavigationMap';
 import SearchBar from '../components/SearchBar';
 import NavigationInfo from '../components/NavigationInfo';
 import BlockInfo from '../components/BlockInfo';
@@ -19,7 +19,7 @@ import { addToHistory } from '../services/historyService';
 import { useAuth } from '../contexts/AuthContext';
 import { addToLocalHistory } from '../services/localHistoryService';
 
-export default function MapScreen() {
+export default function NavigationMainScreen() {
   const { user } = useAuth();
   const mapRef = useRef(null);
   const { location, region, speed } = useLocation(mapRef);
@@ -194,7 +194,9 @@ export default function MapScreen() {
         activeRoute={activeRoute}
         setRouteInfo={setRouteInfo}
         setNextStep={setNextStep}
-        followsUserLocation={isCameraLocked} // Pass the state here
+        followsUserLocation={isCameraLocked}
+        avoidTolls={avoidTolls} // Add this
+        // Pass the state here
       />
       
       {showRoutes && !isNavigating && (
@@ -203,6 +205,7 @@ export default function MapScreen() {
           destination={destination}
           onRouteSelect={setSelectedRoute}
           onStartNavigation={handleStartNavigation}
+          avoidTolls={avoidTolls} // Ajout de cette prop
         />
       )}
       

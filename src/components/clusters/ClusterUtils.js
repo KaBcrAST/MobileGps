@@ -1,54 +1,44 @@
 import { StyleSheet } from 'react-native';
 
-export const getClusterIcon = (type) => {
-  switch (type) {
-    case 'POLICE': 
-      return 'police-badge';
-    case 'TRAFFIC':
-      return 'traffic-cone';
-    case 'ACCIDENT':
-      return 'car-emergency';
-    case 'DANGER':
-      return 'alert-circle';
-    default:
-      return 'alert-circle';
+const ALERT_CONFIG = {
+  POLICE: {
+    icon: 'police-badge',
+    color: '#2980b9'
+  },
+  TRAFFIC: {
+    icon: 'traffic-cone',
+    color: '#e74c3c'
+  },
+  ACCIDENT: {
+    icon: 'car-emergency',
+    color: '#c0392b'
+  },
+  DANGER: {
+    icon: 'alert-circle',
+    color: '#f39c12'
   }
 };
 
+export const getClusterIcon = (type) => {
+  return ALERT_CONFIG[type]?.icon || 'alert-circle';
+};
+
+export const getAlertIcon = (type) => {
+  return ALERT_CONFIG[type]?.icon || 'alert-circle';
+};
+
 export const getClusterColor = (type) => {
-  switch (type) {
-    case 'POLICE': return '#2980b9';
-    case 'TRAFFIC': return '#e74c3c';
-    case 'ACCIDENT': return '#c0392b';
-    case 'DANGER': return '#f39c12';
-    default: return '#95a5a6';
-  }
+  return ALERT_CONFIG[type]?.color || '#95a5a6';
+};
+
+export const getAlertColor = (type) => {
+  return ALERT_CONFIG[type]?.color || '#95a5a6';
 };
 
 export const getClusterStyle = (type) => ({
   backgroundColor: 'white',
   borderColor: getClusterColor(type)
 });
-
-export const getAlertIcon = (type) => {
-  switch (type) {
-    case 'TRAFFIC': return 'traffic-cone';
-    case 'ACCIDENT': return 'car-emergency';
-    case 'POLICE': return 'police-badge';
-    case 'DANGER': return 'alert-circle';
-    default: return 'alert-circle';
-  }
-};
-
-export const getAlertColor = (type) => {
-  switch (type) {
-    case 'TRAFFIC': return '#e74c3c';
-    case 'ACCIDENT': return '#c0392b';
-    case 'POLICE': return '#2980b9';
-    case 'DANGER': return '#f39c12';
-    default: return '#95a5a6';
-  }
-};
 
 export const styles = StyleSheet.create({
   clusterMarker: {

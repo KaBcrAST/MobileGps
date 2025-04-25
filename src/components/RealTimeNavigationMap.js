@@ -6,7 +6,6 @@ import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DirectionArrow from '../screens/DirectionArrow';
 import { mapStyles } from '../styles/globalStyles';
-import TrafficOverlay from './TrafficOverlay';
 import {
   getClusterIcon,
   getClusterColor,
@@ -47,7 +46,6 @@ const Map = ({
   const [clusters, setClusters] = useState([]);
   const [nearbyCluster, setNearbyCluster] = useState(null);
   const [clusterDistance, setClusterDistance] = useState(null);
-  const [trafficInfo, setTrafficInfo] = useState(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [notifiedClusters] = useState(() => new Set());
   const [showRoute, setShowRoute] = useState(true);
@@ -112,28 +110,6 @@ const Map = ({
     const interval = setInterval(fetchClusters, 30000);
     return () => clearInterval(interval);
   }, [location]);
-
-  const fetchTrafficInfo = async () => {
-    if (!location?.coords || !destination) return;
-
-    try {
-      const response = await axios.get(`${API_URL}/traffic/route`, {
-        params: {
-          origin: `${location.coords.latitude},${location.coords.longitude}`,
-          destination: `${destination.latitude},${destination.longitude}`
-        }
-      });
-      setTrafficInfo(response.data);
-    } catch (error) {
-      console.error('Error fetching traffic:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (location && destination) {
-      fetchTrafficInfo();
-    }
-  }, [location, destination]);
 
   useEffect(() => {
     setIsPreviewMode(location && destination && !isNavigating);
@@ -253,8 +229,6 @@ const Map = ({
         setNearbyCluster={setNearbyCluster}
         setClusterDistance={setClusterDistance}
       />
-
-      <TrafficOverlay trafficInfo={trafficInfo} />
     </View>
   );
 };

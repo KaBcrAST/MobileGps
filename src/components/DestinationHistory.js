@@ -81,11 +81,11 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
     borderRadius: 10,
-    padding: 10, // Reduced padding
-    maxHeight: 200, // Reduced max height
+    padding: 10,
+    maxHeight: 200,
   },
   title: {
-    fontSize: 14, // Smaller font
+    fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#333',
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   historyItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8, // Reduced padding
+    padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -117,19 +117,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   destinationName: {
-    fontSize: 14, // Smaller font
+    fontSize: 14,
     fontWeight: '500',
     color: '#333',
   },
   address: {
-    fontSize: 12, // Smaller font
+    fontSize: 12,
     color: '#666',
     marginTop: 1,
-  },
-  errorText: {
-    textAlign: 'center',
-    color: 'red',
-    padding: 20,
   },
   deleteButton: {
     padding: 5,

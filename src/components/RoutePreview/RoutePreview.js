@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const API_URL = 'https://react-gpsapi.vercel.app/api';
 
-const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation }) => {
+const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, avoidTolls }) => {
   const mapRef = useRef(null);
   const [routes, setRoutes] = useState([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
@@ -13,19 +13,17 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation })
   useEffect(() => {
     const fetchRoutes = async () => {
       try {
-        const response = await axios.get(`${API_URL}/navigation/preview`, {
+        const response = await axios.get(`${API_URL}/navigation/preview`, { // Changé de preview à route
           params: {
             origin: `${origin.latitude},${origin.longitude}`,
-            destination: `${destination.latitude},${destination.longitude}`
+            destination: `${destination.latitude},${destination.longitude}`,
+            avoidTolls: avoidTolls 
           }
         });
 
         if (response.data.routes) {
-          // Ne garder que les 2 premières routes
           const twoRoutes = response.data.routes.slice(0, 2);
           setRoutes(twoRoutes);
-          // Ne pas sélectionner automatiquement la première route
-          // Laisser l'utilisateur choisir
         }
       } catch (error) {
         console.error('Failed to fetch routes:', error);
@@ -35,13 +33,11 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation })
     if (origin && destination) {
       fetchRoutes();
     }
-  }, [origin, destination]);
-
+  }, [origin, destination, avoidTolls]); 
   const handleRouteSelect = (index) => {
     setSelectedRouteIndex(index);
     const selectedRoute = routes[index];
     
-    // Notifier le parent avec la route complète
     if (onRouteSelect && selectedRoute) {
       console.log('Selected route:', selectedRoute);
       onRouteSelect({
@@ -50,7 +46,6 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation })
       });
     }
 
-    // Adjust map view to show selected route
     if (routes[index]?.coordinates) {
       mapRef.current?.fitToCoordinates(routes[index].coordinates, {
         edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
@@ -68,14 +63,16 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation })
     const selectedRoute = routes[selectedRouteIndex];
     console.log('✅ Starting navigation with route:', {
       index: selectedRouteIndex,
-      summary: selectedRoute.summary
+      summary: selectedRoute.summary,
+      avoidTolls: avoidTolls
     });
 
     onStartNavigation({
       ...selectedRoute,
       index: selectedRouteIndex,
       origin: `${origin.latitude},${origin.longitude}`,
-      destination: `${destination.latitude},${destination.longitude}`
+      destination: `${destination.latitude},${destination.longitude}`,
+      avoidTolls: avoidTolls
     });
   };
 
@@ -178,7 +175,7 @@ const styles = StyleSheet.create({
   },
   routesCarousel: {
     position: 'absolute',
-    top: 100, // Changed from 20 to 100 to move it down
+    top: 100,
     left: 0,
     right: 0,
     backgroundColor: 'transparent',

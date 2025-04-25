@@ -10,6 +10,22 @@ const useNavigationLogic = (location, mapRef) => {
   const [isNavigating, setIsNavigating] = useState(false);
   const [heading, setHeading] = useState(0);
   const [activeRoute, setActiveRoute] = useState(null);
+  const [avoidTolls, setAvoidTolls] = useState(false);
+
+  useEffect(() => {
+    loadTollPreference();
+  }, []);
+
+  const loadTollPreference = async () => {
+    try {
+      const savedPreference = await AsyncStorage.getItem('avoidTolls');
+      if (savedPreference !== null) {
+        setAvoidTolls(JSON.parse(savedPreference));
+      }
+    } catch (error) {
+      console.error('Error loading toll preference:', error);
+    }
+  };
 
   const fetchRoute = async () => {
     if (!location?.coords || !destination) return;
@@ -18,7 +34,8 @@ const useNavigationLogic = (location, mapRef) => {
       const response = await axios.get(`${API_URL}/navigation/route`, {
         params: {
           origin: `${location.coords.latitude},${location.coords.longitude}`,
-          destination: `${destination.latitude},${destination.longitude}`
+          destination: `${destination.latitude},${destination.longitude}`,
+          avoidTolls: avoidTolls // Ajouter ce paramètre
         }
       });
       
@@ -52,6 +69,18 @@ const useNavigationLogic = (location, mapRef) => {
     }
   };
 
+  const handleTollPreferenceChange = async (value) => {
+    setAvoidTolls(value);
+    try {
+      await AsyncStorage.setItem('avoidTolls', JSON.stringify(value));
+      if (destination) {
+        await fetchRoute(); // Recalculer la route avec la nouvelle préférence
+      }
+    } catch (error) {
+      console.error('Error saving toll preference:', error);
+    }
+  };
+
   return {
     destination,
     setDestination,
@@ -62,7 +91,9 @@ const useNavigationLogic = (location, mapRef) => {
     heading,
     activeRoute,
     setActiveRoute,
-    endNavigation
+    endNavigation,
+    avoidTolls,
+    handleTollPreferenceChange
   };
 };
 

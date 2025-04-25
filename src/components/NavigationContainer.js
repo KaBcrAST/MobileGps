@@ -1,11 +1,11 @@
 import React, { useRef } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import Map from '../components/Map';
-import SearchBar from '../components/SearchBar';
+import Map from './RealTimeNavigationMap';
+import SearchBar from './SearchBar';
 import RouteSelection from '../components/RouteSelection';
 import BlockInfo from './BlockInfo';
 import NavigationStats from '../components/NavigationStats';
-import FloatingMenu from '../components/FloatingMenu';
+import FloatingMenu from './FloatingMenu';
 import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
 import styles from '../styles/globalStyles';

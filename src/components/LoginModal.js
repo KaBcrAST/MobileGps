@@ -16,19 +16,14 @@ const LoginModal = ({ visible, onClose }) => {
   const [errors, setErrors] = useState({});
 
   const hashPassword = (password) => {
-    const hashedPassword = CryptoJS.SHA256(password).toString();
-    console.log('Password after hash:', hashedPassword); // Debug
-    return hashedPassword;
+    return CryptoJS.SHA256(password).toString();
   };
 
   const handleClassicLogin = async () => {
     try {
-      const hashedPassword = hashPassword(formData.password);
-      console.log('Attempting login with hash:', hashedPassword); // Debug
-
       const secureFormData = {
         email: formData.email.toLowerCase().trim(),
-        password: hashedPassword
+        password: hashPassword(formData.password)
       };
 
       const response = await fetch('https://react-gpsapi.vercel.app/auth/login', {
@@ -40,7 +35,6 @@ const LoginModal = ({ visible, onClose }) => {
       });
 
       const data = await response.json();
-      console.log('Server response:', data); // Debug
 
       if (data.success) {
         await login(data);
@@ -49,7 +43,6 @@ const LoginModal = ({ visible, onClose }) => {
         setErrors({ submit: data.message || 'Email ou mot de passe incorrect' });
       }
     } catch (error) {
-      console.error('Login error:', error);
       setErrors({ submit: 'Erreur de connexion au serveur' });
     }
   };
