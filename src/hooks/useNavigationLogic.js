@@ -3,6 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 const API_URL = 'https://react-gpsapi.vercel.app/api';
+const STORAGE_KEY = 'avoidTolls';
+const DEFAULT_ZOOM = 15;
+const ANIMATION_DURATION = 1000;
 
 const useNavigationLogic = (location, mapRef) => {
   const [destination, setDestination] = useState(null);
@@ -18,16 +21,16 @@ const useNavigationLogic = (location, mapRef) => {
 
   const loadTollPreference = async () => {
     try {
-      const savedPreference = await AsyncStorage.getItem('avoidTolls');
+      const savedPreference = await AsyncStorage.getItem(STORAGE_KEY);
       if (savedPreference !== null) {
         setAvoidTolls(JSON.parse(savedPreference));
       }
-    } catch (error) {
-      console.error('Error loading toll preference:', error);
+    } catch {
+      // Silently fail and use default value
     }
   };
 
-  const fetchRoute = async () => {
+  const fetchRoute = useCallback(async () => {
     if (!location?.coords || !destination) return;
 
     try {
@@ -35,7 +38,7 @@ const useNavigationLogic = (location, mapRef) => {
         params: {
           origin: `${location.coords.latitude},${location.coords.longitude}`,
           destination: `${destination.latitude},${destination.longitude}`,
-          avoidTolls: avoidTolls // Ajouter ce paramètre
+          avoidTolls
         }
       });
       
@@ -43,18 +46,18 @@ const useNavigationLogic = (location, mapRef) => {
         setActiveRoute(response.data.routes[0]);
         setRouteInfo(response.data.routes[0]);
       }
-    } catch (error) {
-      console.error('Error fetching route:', error);
+    } catch {
+      setActiveRoute(null);
+      setRouteInfo(null);
     }
-  };
+  }, [location?.coords, destination, avoidTolls]);
 
-  const endNavigation = () => {
+  const endNavigation = useCallback(() => {
     setIsNavigating(false);
     setDestination(null);
     setRouteInfo(null);
     setActiveRoute(null);
     
-    // Reset map view
     if (location?.coords && mapRef.current) {
       mapRef.current.animateCamera({
         center: {
@@ -63,23 +66,23 @@ const useNavigationLogic = (location, mapRef) => {
         },
         pitch: 0,
         heading: 0,
-        zoom: 15,
-        duration: 1000
+        zoom: DEFAULT_ZOOM,
+        duration: ANIMATION_DURATION
       });
     }
-  };
+  }, [location?.coords, mapRef]);
 
-  const handleTollPreferenceChange = async (value) => {
+  const handleTollPreferenceChange = useCallback(async (value) => {
     setAvoidTolls(value);
     try {
-      await AsyncStorage.setItem('avoidTolls', JSON.stringify(value));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(value));
       if (destination) {
-        await fetchRoute(); // Recalculer la route avec la nouvelle préférence
+        await fetchRoute();
       }
-    } catch (error) {
-      console.error('Error saving toll preference:', error);
+    } catch {
+      // Silently fail - user can retry
     }
-  };
+  }, [destination, fetchRoute]);
 
   return {
     destination,

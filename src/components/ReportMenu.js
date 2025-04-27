@@ -5,40 +5,31 @@ import axios from 'axios';
 
 const API_URL = 'https://react-gpsapi.vercel.app/api';
 
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
 const ReportMenu = ({ location }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [currentReport, setCurrentReport] = useState(null);
   const animation = useRef(new Animated.Value(0)).current;
 
-  const handleReport = (type) => {
-    setCurrentReport({
-      type,
-      latitude: location?.coords?.latitude,
-      longitude: location?.coords?.longitude
-    });
-    setShowConfirmation(true);
-    toggleMenu();
+  const toggleMenu = () => {
+    const toValue = isOpen ? 0 : 1;
+    Animated.spring(animation, {
+      toValue,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    setIsOpen(!isOpen);
   };
 
-  const confirmReport = async () => {
-    if (currentReport) {
-      await sendReport(currentReport.type);
-      setShowConfirmation(false);
-      setCurrentReport(null);
-    }
-  };
-
-  const sendReport = async (type, retries = 3) => {
+  const sendReport = async (type) => {
     if (!location?.coords) {
       Alert.alert('Erreur', 'Position non disponible');
       return;
     }
 
     try {
-      const response = await axios.post(`${API_URL}/reports`, {
+      await axios.post(`${API_URL}/reports`, {
         type,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude
@@ -50,25 +41,20 @@ const ReportMenu = ({ location }) => {
         }
       });
 
-      console.log('✅ Report sent:', response.data);
       Alert.alert('Succès', 'Alerte signalée avec succès');
     } catch (error) {
-      console.error('❌ Error:', error);
       Alert.alert('Erreur', 'Le signalement a échoué');
     }
 
     toggleMenu();
   };
 
-  const toggleMenu = () => {
-    const toValue = isOpen ? 0 : 1;
-    Animated.spring(animation, {
-      toValue,
-      friction: 5,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-    setIsOpen(!isOpen);
+  const confirmReport = async () => {
+    if (currentReport) {
+      await sendReport(currentReport.type);
+      setShowConfirmation(false);
+      setCurrentReport(null);
+    }
   };
 
   const buttons = [

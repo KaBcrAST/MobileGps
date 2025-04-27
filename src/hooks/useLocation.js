@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 
+const LOCATION_CONFIG = {
+  accuracy: Location.Accuracy.BestForNavigation,
+  distanceInterval: 1,
+  timeInterval: 1000
+};
+
+const REGION_DELTA = {
+  latitude: 0.003,
+  longitude: 0.003
+};
+
+const SPEED_LIMIT_DELAY = 30000;
+
 export default function useLocation(mapRef) {
   const [location, setLocation] = useState(null);
   const [region, setRegion] = useState(null);
@@ -13,31 +26,21 @@ export default function useLocation(mapRef) {
 
     const initializeLocation = async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        console.error('Location permission denied');
-        return;
-      }
+      if (status !== 'granted') return;
 
-      const initialLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.BestForNavigation
-      });
+      const initialLocation = await Location.getCurrentPositionAsync(LOCATION_CONFIG);
 
       setLocation(initialLocation);
       setRegion({
         latitude: initialLocation.coords.latitude,
         longitude: initialLocation.coords.longitude,
-        latitudeDelta: 0.003,
-        longitudeDelta: 0.003,
+        latitudeDelta: REGION_DELTA.latitude,
+        longitudeDelta: REGION_DELTA.longitude,
       });
 
       locationSubscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.BestForNavigation,
-          distanceInterval: 1, // Changed to 1 to increase frequency
-          timeInterval: 1000,
-        },
+        LOCATION_CONFIG,
         (newLocation) => {
-          console.log('New location:', newLocation); // Debug log
           setLocation(newLocation);
           const speedKmh = (newLocation.coords.speed || 0) * 3.6;
           setSpeed(speedKmh < 1 ? 0 : Math.round(speedKmh));
@@ -46,19 +49,18 @@ export default function useLocation(mapRef) {
             setRegion({
               latitude: newLocation.coords.latitude,
               longitude: newLocation.coords.longitude,
-              latitudeDelta: 0.003,
-              longitudeDelta: 0.003,
+              latitudeDelta: REGION_DELTA.latitude,
+              longitudeDelta: REGION_DELTA.longitude,
             });
           }
 
-          // Update speed limit every 30 seconds
           clearTimeout(speedLimitTimeout);
           speedLimitTimeout = setTimeout(() => {
             fetchSpeedLimit(
               newLocation.coords.latitude,
               newLocation.coords.longitude
             );
-          }, 30000);
+          }, SPEED_LIMIT_DELAY);
         }
       );
     };
@@ -66,9 +68,7 @@ export default function useLocation(mapRef) {
     initializeLocation();
 
     return () => {
-      if (locationSubscription) {
-        locationSubscription.remove();
-      }
+      locationSubscription?.remove();
       clearTimeout(speedLimitTimeout);
     };
   }, []);
@@ -87,15 +87,14 @@ export default function useLocation(mapRef) {
       
       const data = await response.json();
       
-      if (data.elements && data.elements.length > 0) {
-        const speedLimitStr = data.elements[0].tags.maxspeed;
-        const speedLimitNum = parseInt(speedLimitStr);
+      if (data.elements?.[0]?.tags?.maxspeed) {
+        const speedLimitNum = parseInt(data.elements[0].tags.maxspeed);
         if (!isNaN(speedLimitNum)) {
           setSpeedLimit(speedLimitNum);
         }
       }
-    } catch (error) {
-      console.error('Error fetching speed limit:', error);
+    } catch {
+      setSpeedLimit(null);
     }
   };
 

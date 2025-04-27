@@ -16,53 +16,36 @@ const RegisterModal = ({ visible, onClose }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    // Validation nom
-    if (!formData.name) {
-      newErrors.name = 'Le nom est requis';
-    } else if (formData.name.length < 2) {
+    if (!formData.name || formData.name.length < 2) {
       newErrors.name = 'Le nom doit contenir au moins 2 caractères';
     }
 
-    // Validation email
     const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    if (!formData.email) {
-      newErrors.email = 'L\'email est requis';
-    } else if (!emailRegex.test(formData.email)) {
-      newErrors.email = 'Veuillez entrer un email valide';
+    if (!formData.email || !emailRegex.test(formData.email)) {
+      newErrors.email = 'Email invalide';
     }
 
-    // Validation mot de passe
-    if (!formData.password) {
-      newErrors.password = 'Le mot de passe est requis';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères';
-    } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Le mot de passe doit contenir au moins une lettre et un chiffre';
+    if (!formData.password || 
+        formData.password.length < 6 || 
+        !/(?=.*[A-Za-z])(?=.*\d)/.test(formData.password)) {
+      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères, une lettre et un chiffre';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const hashPassword = (password) => {
-    console.log('Password before hash:', password); // Debug
-    const hashedPassword = CryptoJS.SHA256(password).toString();
-    console.log('Password after hash:', hashedPassword); // Debug
-    return hashedPassword;
-  };
+  const hashPassword = (password) => CryptoJS.SHA256(password).toString();
 
   const handleRegister = async () => {
     if (!validateForm()) return;
 
     try {
-      // On crée un nouvel objet avec le mot de passe hashé
       const secureFormData = {
         name: formData.name.trim(),
         email: formData.email.toLowerCase().trim(),
-        password: hashPassword(formData.password) // Hash le mot de passe avant envoi
+        password: hashPassword(formData.password)
       };
-
-      console.log('Sending secure data...'); // Pour debug
 
       const response = await fetch('https://react-gpsapi.vercel.app/auth/register', {
         method: 'POST',
@@ -73,7 +56,6 @@ const RegisterModal = ({ visible, onClose }) => {
       });
 
       const data = await response.json();
-      console.log('Server response:', data); // Pour debug
 
       if (data.success) {
         await login(data);
@@ -82,7 +64,6 @@ const RegisterModal = ({ visible, onClose }) => {
         setErrors({ submit: data.message || 'Erreur lors de l\'inscription' });
       }
     } catch (error) {
-      console.error('Register error:', error);
       setErrors({ submit: 'Erreur de connexion au serveur' });
     }
   };

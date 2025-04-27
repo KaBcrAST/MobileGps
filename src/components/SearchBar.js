@@ -37,8 +37,8 @@ const SearchBar = ({ onPlaceSelect }) => {
         params: { query }
       });
       setPredictions(predictions);
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch {
+      setPredictions([]);
     }
   };
 
@@ -51,19 +51,17 @@ const SearchBar = ({ onPlaceSelect }) => {
       const { data: details } = await axios.get(`${API_URL}/places/${prediction.place_id}`);
       
       if (details?.geometry?.location) {
-        // Format destination with complete address information
         const destination = {
           name: details.name || prediction.structured_formatting?.main_text || prediction.description,
           address: details.formatted_address || prediction.description,
           latitude: details.geometry.location.lat,
           longitude: details.geometry.location.lng,
         };
-        
-        console.log('Selected place details:', destination); // Debug log
         onPlaceSelect(destination);
       }
-    } catch (error) {
-      console.error('Place details error:', error);
+    } catch {
+      setSearchQuery('');
+      setPredictions([]);
     }
   };
 

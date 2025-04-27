@@ -45,30 +45,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Paramètres Navigation</Text>
       
-      <TouchableOpacity style={styles.settingItem}>
-        <View style={styles.settingContent}>
-          <Ionicons name="speedometer-outline" size={24} color="#333" />
-          <Text style={styles.settingText}>Limitations de vitesse</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color="#666" />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.settingItem}>
-        <View style={styles.settingContent}>
-          <Ionicons name="notifications-outline" size={24} color="#333" />
-          <Text style={styles.settingText}>Alertes vocales</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color="#666" />
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.settingItem}>
-        <View style={styles.settingContent}>
-          <Ionicons name="map-outline" size={24} color="#333" />
-          <Text style={styles.settingText}>Type de carte</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color="#666" />
-      </TouchableOpacity>
-
       <View>
         <TouchableOpacity 
           style={styles.settingItem}

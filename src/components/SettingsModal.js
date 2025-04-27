@@ -6,8 +6,8 @@ import { useAuth } from '../contexts/AuthContext';
 const SettingsModal = ({ visible, onClose }) => {
   const { user, logout } = useAuth();
 
-  const handleLogout = async () => {
-    await logout();
+  const handleLogout = () => {
+    logout();
     onClose();
   };
 
@@ -30,11 +30,11 @@ const SettingsModal = ({ visible, onClose }) => {
             <Text style={styles.sectionTitle}>Informations du compte</Text>
             <View style={styles.infoRow}>
               <Ionicons name="person-outline" size={20} color="#666" />
-              <Text style={styles.infoText}>{user?.name}</Text>
+              <Text style={styles.infoText}>{user?.name || 'Non renseigné'}</Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="mail-outline" size={20} color="#666" />
-              <Text style={styles.infoText}>{user?.email}</Text>
+              <Text style={styles.infoText}>{user?.email || 'Non renseigné'}</Text>
             </View>
           </View>
 

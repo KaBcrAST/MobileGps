@@ -3,6 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthContext = createContext();
 
+const STORAGE_KEYS = {
+  TOKEN: 'auth_token',
+  USER: 'user'
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -14,14 +19,17 @@ export const AuthProvider = ({ children }) => {
 
   const loadStoredAuth = async () => {
     try {
-      const storedToken = await AsyncStorage.getItem('auth_token');
-      const storedUser = await AsyncStorage.getItem('user');
+      const [storedToken, storedUser] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.TOKEN),
+        AsyncStorage.getItem(STORAGE_KEYS.USER)
+      ]);
+
       if (storedToken && storedUser) {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      console.error('Error loading auth:', error);
+      // Silent fail - user will need to login again
     } finally {
       setLoading(false);
     }
@@ -29,9 +37,6 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (data) => {
     try {
-      console.log('Login data received:', data); // Debug log
-
-      // If we don't have _id in the user object, try to fetch user data
       if (data.user && !data.user._id) {
         const response = await fetch('https://react-gpsapi.vercel.app/auth/me', {
           headers: {
@@ -45,34 +50,50 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      await AsyncStorage.setItem('user', JSON.stringify(data.user));
-      await AsyncStorage.setItem('token', data.token);
-      
-      console.log('Stored user data:', data.user); // Debug log
+      await Promise.all([
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)),
+        AsyncStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
+      ]);
       
       setUser(data.user);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Login error:', error);
+      setToken(data.token);
+    } catch {
+      throw new Error('Échec de la connexion');
     }
   };
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem('auth_token');
-      await AsyncStorage.removeItem('user');
+      await Promise.all([
+        AsyncStorage.removeItem(STORAGE_KEYS.TOKEN),
+        AsyncStorage.removeItem(STORAGE_KEYS.USER)
+      ]);
       setToken(null);
       setUser(null);
-    } catch (error) {
-      console.error('Logout error:', error);
+    } catch {
+      throw new Error('Échec de la déconnexion');
     }
   };
 
+  const value = {
+    user,
+    token,
+    loading,
+    login,
+    logout
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth doit être utilisé dans un AuthProvider');
+  }
+  return context;
+};

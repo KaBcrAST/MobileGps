@@ -3,30 +3,21 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import styles from '../styles/globalStyles';
 
-const getDirectionIcon = (maneuver) => {
-  if (!maneuver) return 'arrow-up';
-  
-  switch(maneuver.toLowerCase()) {
-    case 'straight':
-    case 'continue':
-      return 'arrow-up';
-    case 'turn-right':
-    case 'right':
-      return 'arrow-forward';
-    case 'turn-left':
-    case 'left':
-      return 'arrow-back';
-    case 'slight-right':
-      return 'arrow-up-circle';
-    case 'slight-left':
-      return 'arrow-up-circle';
-    case 'uturn-right':
-    case 'uturn-left':
-      return 'refresh-circle';
-    default:
-      return 'arrow-up';
-  }
+const DIRECTION_ICONS = {
+  straight: 'arrow-up',
+  continue: 'arrow-up',
+  right: 'arrow-forward',
+  'turn-right': 'arrow-forward',
+  left: 'arrow-back',
+  'turn-left': 'arrow-back',
+  'slight-right': 'arrow-up-circle',
+  'slight-left': 'arrow-up-circle',
+  'uturn-right': 'refresh-circle',
+  'uturn-left': 'refresh-circle'
 };
+
+const getDirectionIcon = (maneuver) => 
+  DIRECTION_ICONS[maneuver?.toLowerCase()] || 'arrow-up';
 
 const NavigationInfo = ({ nextStep }) => (
   <View style={styles.directionsContainer}>

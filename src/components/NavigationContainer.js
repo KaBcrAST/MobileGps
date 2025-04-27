@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import Map from './RealTimeNavigationMap';
 import SearchBar from './SearchBar';
 import RouteSelection from '../components/RouteSelection';
@@ -14,7 +14,7 @@ import NavigationDataDisplay from './NavigationDataDisplay';
 
 export default function MapScreen() {
   const mapRef = useRef(null);
-  const { location, speed } = useLocation(mapRef); // Supprimé region car non utilisé
+  const { location, speed } = useLocation(mapRef);
   const { 
     destination, 
     setDestination, 
@@ -22,12 +22,22 @@ export default function MapScreen() {
     setRouteInfo,
     isNavigating, 
     startNavigation, 
-    heading 
-  } = useNavigationLogic(location, mapRef); // Supprimé stopNavigation car non utilisé
+    heading,
+    routes,
+    selectedRoute,
+    setActiveRoute,
+    showRoutes,
+    setShowRoutes,
+    unlockCamera,
+    isCameraLocked,
+    handlePlaceSelect,
+    handleRouteSelect,
+    isLoading
+  } = useNavigationLogic(location, mapRef);
 
   const handleStartNavigation = () => {
-    const selectedRouteData = routes[selectedRoute];
-    setActiveRoute(selectedRouteData);
+    if (!routes?.[selectedRoute]) return;
+    setActiveRoute(routes[selectedRoute]);
     setShowRoutes(false);
     unlockCamera();
     startNavigation();
@@ -45,7 +55,6 @@ export default function MapScreen() {
         setRouteInfo={setRouteInfo}
         followsUserLocation={isCameraLocked}
       />
-
       <SearchBar onPlaceSelect={handlePlaceSelect} />
       <BlockInfo 
         speed={speed}
@@ -64,21 +73,13 @@ export default function MapScreen() {
           destination={destination}
         />
       )}
-
-      {isNavigating && (
-        <StatsBlock 
-          routeInfo={routeInfo}
-          style={styles.statsBlock} // Déplacé dans globalStyles
-        />
-      )}
-
+      {isNavigating && <StatsBlock routeInfo={routeInfo} style={styles.statsBlock} />}
       {isLoading && (
-        <View style={[StyleSheet.absoluteFill, styles.loadingContainer]}>
+        <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#3498db" />
         </View>
       )}
-
-      {showRoutes && routes.length > 0 && (
+      {showRoutes && routes?.length > 0 && (
         <RouteSelection
           origin={location?.coords}
           destination={destination}
@@ -86,12 +87,8 @@ export default function MapScreen() {
           onStartNavigation={handleStartNavigation}
         />
       )}
-
       {selectedRoute !== null && routes?.[selectedRoute] && (
-        <NavigationDataDisplay 
-          route={routes[selectedRoute]} 
-          style={{ zIndex: 9999 }}
-        />
+        <NavigationDataDisplay route={routes[selectedRoute]} style={styles.navigationData} />
       )}
     </View>
   );

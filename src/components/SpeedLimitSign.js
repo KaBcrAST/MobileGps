@@ -4,32 +4,23 @@ import { navigationService } from '../services/navigationService';
 
 const SpeedLimitSign = ({ location }) => {
   const [speedLimit, setSpeedLimit] = useState(null);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchSpeedLimit = async () => {
-      if (!location?.coords) {
-        console.log('❌ Invalid location data');
-        return;
-      }
+      if (!location?.coords) return;
 
       try {
         const limit = await navigationService.getSpeedLimit(location);
         setSpeedLimit(limit);
-        setError(null);
-      } catch (error) {
-        console.error('❌ Speed limit error:', error);
-        setError('Failed to fetch');
+      } catch {
+        setSpeedLimit(null);
       }
     };
 
-    if (location?.coords) {
-      fetchSpeedLimit();
-    }
+    fetchSpeedLimit();
   }, [location]);
 
-  // Don't render if no valid data
-  if (!location?.coords || error) return null;
+  if (!location?.coords || !speedLimit) return null;
 
   return (
     <View style={styles.container}>

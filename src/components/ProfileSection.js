@@ -10,8 +10,6 @@ const ProfileSection = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  console.log('User data:', user); // Pour déboguer
-
   return (
     <View style={styles.profileSection}>
       <View style={styles.profileImage}>
@@ -48,10 +46,6 @@ const ProfileSection = () => {
           <LoginModal 
             visible={showLogin}
             onClose={() => setShowLogin(false)}
-            onLogin={(email, password) => {
-              console.log('Login attempt:', email, password);
-              setShowLogin(false);
-            }}
           />
         </>
       )}

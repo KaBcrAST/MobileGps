@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, ActivityIndicator, View, StyleSheet, Text, Alert } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
-import MapViewDirections from 'react-native-maps-directions';
+import { Platform, ActivityIndicator, View, StyleSheet, Text } from 'react-native';
+import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import DirectionArrow from '../screens/DirectionArrow';
 import { mapStyles } from '../styles/globalStyles';
 import {
   getClusterIcon,
@@ -12,15 +10,19 @@ import {
   getClusterStyle,
   styles as clusterStyles
 } from './clusters/ClusterUtils';
-import ClusterAlert from './clusters/ClusterAlert';
 import ClusterOverlay from './clusters/ClusterOverlay';
-import { calculateDistance } from '../utils/distance';
 import RoutePolylines from './routes/RoutePolylines';
 import LocationMarker from './markers/LocationMarker';
 
 const API_URL = 'https://react-gpsapi.vercel.app/api';  
 const PREVIEW_ALTITUDE = 50000;
 const NAVIGATION_ALTITUDE = 500;
+const MAP_PADDING = {
+  top: 150,
+  right: 150,
+  bottom: 150,
+  left: 150
+};
 
 const Map = ({ 
   mapRef,
@@ -30,17 +32,12 @@ const Map = ({
   isNavigating,
   activeRoute,
   setRouteInfo,
-  setNextStep,
   showRoutes,
   routes,
   selectedRoute,
   onRouteSelect,
   followsUserLocation
 }) => {
-  const deg2rad = (deg) => {
-    return deg * (Math.PI/180);
-  };
-
   const [mapConfig, setMapConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [clusters, setClusters] = useState([]);
@@ -127,12 +124,7 @@ const Map = ({
       
       setTimeout(() => {
         mapRef.current.fitToCoordinates(coordinates, {
-          edgePadding: {
-            top: 150,
-            right: 150,
-            bottom: 150,
-            left: 150
-          },
+          edgePadding: MAP_PADDING,
           animated: true
         });
       }, 1000);
@@ -240,5 +232,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export { getClusterIcon, getClusterColor };
 export default Map;
