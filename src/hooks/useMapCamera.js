@@ -21,28 +21,48 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   // Constantes optimisées pour une expérience style Waze
   const MINIMUM_UPDATE_INTERVAL = 800;
   const DIRECTION_THRESHOLD = 0.4;
-  const NAVIGATION_ALTITUDE = 100;
-  const NORMAL_ALTITUDE = 150;
+  const NAVIGATION_ALTITUDE = 30;
+  const NORMAL_ALTITUDE = 100;
   const PREVIEW_ALTITUDE = 1000;
-  const NAVIGATION_PITCH = 60;
-  const NORMAL_PITCH = 55;
+  const NAVIGATION_PITCH = 75;
+  const NORMAL_PITCH = 60;
   
   // SUPPRIMÉ: const VERTICAL_OFFSET = -0.0003;
   // AJOUTÉ: Distance de décalage pour style Waze en mètres
-  const OFFSET_DISTANCE = 40; // 100 mètres de décalage
+  const OFFSET_DISTANCE = -30; // 100 mètres de décalage
 
-  // NOUVELLE FONCTION: Décaler un point géographique selon une direction et une distance
+  // Amélioration de la fonction offsetCoordinates pour de grands décalages
   const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {
+    // Algorithme haversine plus précis pour les grands décalages
     const earthRadius = 6378137; // Rayon moyen de la Terre en mètres
-    // Pour obtenir le décalage dans la direction opposée au heading, on ajoute 180°
-    const offsetHeading = (heading + 180) % 360;
+    const offsetHeading = (heading + 180) % 360; // Direction opposée
+    const headingRad = offsetHeading * Math.PI / 180;
     
-    const deltaLat = (distanceInMeters * Math.cos(offsetHeading * Math.PI / 180)) / earthRadius;
-    const deltaLng = (distanceInMeters * Math.sin(offsetHeading * Math.PI / 180)) / (earthRadius * Math.cos(latitude * Math.PI / 180));
+    // Distance angulaire
+    const angularDistance = distanceInMeters / earthRadius;
+    
+    // Convertir en radians
+    const latRad = latitude * Math.PI / 180;
+    const lonRad = longitude * Math.PI / 180;
+    
+    // Calcul précis des nouvelles coordonnées
+    const newLatRad = Math.asin(
+      Math.sin(latRad) * Math.cos(angularDistance) +
+      Math.cos(latRad) * Math.sin(angularDistance) * Math.cos(headingRad)
+    );
+    
+    const newLonRad = lonRad + Math.atan2(
+      Math.sin(headingRad) * Math.sin(angularDistance) * Math.cos(latRad),
+      Math.cos(angularDistance) - Math.sin(latRad) * Math.sin(newLatRad)
+    );
+    
+    // Conversion en degrés
+    const newLat = newLatRad * 180 / Math.PI;
+    const newLon = newLonRad * 180 / Math.PI;
     
     return {
-      latitude: latitude + deltaLat * (180 / Math.PI),
-      longitude: longitude + deltaLng * (180 / Math.PI),
+      latitude: newLat,
+      longitude: newLon
     };
   }, []);
 
@@ -109,7 +129,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
       pitch: navigating ? NAVIGATION_PITCH : NORMAL_PITCH,
       heading: headingToUse,
       altitude: navigating ? NAVIGATION_ALTITUDE : NORMAL_ALTITUDE,
-      zoom: navigating ? 17 : 16,
+      zoom: navigating ? 18 : 17,
     };
   }, [offsetCoordinates]);
 
@@ -199,7 +219,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     const nextPoint = findNextPoint(location.coords, coordinates);
     const directionToUse = nextPoint ? getBearing(location.coords, nextPoint) : (calculatedHeading.current || heading || 0);
     
-    // MODIFIÉ: Utiliser offsetCoordinates pour calculer le centre de la caméra
+    // Utiliser le décalage augmenté pour placer le point GPS très bas sur l'écran
     const offsetCenter = offsetCoordinates(
       location.coords.latitude, 
       location.coords.longitude, 
@@ -207,13 +227,12 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
       OFFSET_DISTANCE
     );
     
-    // Créer une configuration de caméra style Waze avec point GPS décalé en fonction de la direction
     const camera = {
       center: offsetCenter,
       pitch: NAVIGATION_PITCH,
       heading: directionToUse,
       altitude: NAVIGATION_ALTITUDE,
-      zoom: 17
+      zoom: 17.5 // Légèrement augmenté pour compenser
     };
     
     animateCameraSafely(camera, { duration: 800 });
