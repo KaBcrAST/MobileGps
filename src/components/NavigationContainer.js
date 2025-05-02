@@ -53,7 +53,7 @@ export default function MapScreen() {
         isNavigating={isNavigating}
         activeRoute={activeRoute}
         setRouteInfo={setRouteInfo}
-        followsUserLocation={isCameraLocked}
+        followsUserLocation={false} // Forcer à false au lieu de isCameraLocked
       />
       <SearchBar onPlaceSelect={handlePlaceSelect} />
       <BlockInfo 

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { API_URL } from '../config/config';
 
-const API_URL = 'https://react-gpsapi.vercel.app/api';
 const STORAGE_KEY = 'avoidTolls';
 const DEFAULT_ZOOM = 15;
 const ANIMATION_DURATION = 1000;

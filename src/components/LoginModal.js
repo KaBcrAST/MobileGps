@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
 import RegisterModal from './RegisterModal';
 import CryptoJS from 'crypto-js';
+import { Platform } from 'react-native';
+import { API_URL } from '../config/config';
 
 const LoginModal = ({ visible, onClose }) => {
   const { login } = useAuth();
@@ -26,7 +28,7 @@ const LoginModal = ({ visible, onClose }) => {
         password: hashPassword(formData.password)
       };
 
-      const response = await fetch('https://react-gpsapi.vercel.app/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -43,30 +45,49 @@ const LoginModal = ({ visible, onClose }) => {
         setErrors({ submit: data.message || 'Email ou mot de passe incorrect' });
       }
     } catch (error) {
+      console.error('Login error:', error);
       setErrors({ submit: 'Erreur de connexion au serveur' });
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
+      console.log('Starting Google OAuth...');
+      
       const result = await WebBrowser.openAuthSessionAsync(
-        'https://react-gpsapi.vercel.app/auth/google',
-        'gpsapp://auth'
+        `${API_URL}/api/auth/google`,
+        'gpsapp://auth',
+        {
+          showInRecents: true,
+          prefersEphemeralWebBrowserSession: true
+        }
       );
 
-      if (result.type === 'success') {
-        const data = result.url.split('?')[1];
-        const params = new URLSearchParams(data);
-        const token = params.get('token');
-        const user = JSON.parse(params.get('user'));
+      console.log('OAuth Result:', {
+        type: result.type,
+        hasUrl: !!result.url
+      });
 
-        if (token) {
-          await login({ token, user });
-          onClose();
+      if (result.type === 'success' && result.url) {
+        const url = new URL(result.url);
+        const params = new URLSearchParams(url.search);
+        
+        const token = params.get('token');
+        const userStr = params.get('user');
+
+        if (!token || !userStr) {
+          throw new Error('Données de connexion incomplètes');
         }
+
+        const user = JSON.parse(decodeURIComponent(userStr));
+        await login({ token, user });
+        onClose();
       }
     } catch (error) {
       console.error('Google login error:', error);
+      setErrors({ 
+        submit: 'Erreur de connexion Google: ' + error.message 
+      });
     }
   };
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Polyline } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
+import useMapCamera from '../../hooks/useMapCamera';
 
 const API_KEY = "AIzaSyBtLW4mbOZNMU5GZyF502KnybtvteVAwlc";
 
@@ -15,8 +16,30 @@ const RoutePolylines = ({
   activeRoute,
   setRouteInfo,
   isPreviewMode,
-  mapRef 
+  mapRef,
+  fitToCoordinates // ⚠️ Ajoutez cette prop ici si elle manque
 }) => {
+
+  // Ajoutez cette vérification dans votre composant RoutePolylines
+  const handleFitToCoordinates = (coords) => {
+    if (fitToCoordinates && Array.isArray(coords) && coords.length > 1) {
+      fitToCoordinates(coords);
+    } else if (!fitToCoordinates) {
+      // Alternative si fitToCoordinates n'est pas disponible
+      console.warn("⚠️ fitToCoordinates n'est pas disponible, utilisation de l'alternative");
+      if (mapRef?.current && Array.isArray(coords) && coords.length > 1) {
+        try {
+          mapRef.current.fitToCoordinates(coords, {
+            edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
+            animated: true
+          });
+        } catch (error) {
+          console.error("❌ Erreur lors de l'ajustement de vue alternatif:", error);
+        }
+      }
+    }
+  };
+
   return (
     <>
       {showRoutes && !isNavigating && routes?.map((route, index) => 
@@ -55,17 +78,8 @@ const RoutePolylines = ({
           onReady={(result) => {
             setRouteInfo(result);
             if (!isPreviewMode) {
-              mapRef.current?.fitToCoordinates(
-                [location.coords, destination],
-                {
-                  edgePadding: {
-                    top: 150,
-                    right: 150,
-                    bottom: 150,
-                    left: 150
-                  },
-                  animated: true
-                }
+              handleFitToCoordinates(
+                [location.coords, destination]
               );
             }
           }}

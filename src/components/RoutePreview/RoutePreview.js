@@ -2,18 +2,19 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, Platform, TouchableOpacity, Text, ScrollView } from 'react-native';
 import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
 import axios from 'axios';
-
-const API_URL = 'https://react-gpsapi.vercel.app/api';
+import { API_URL } from '../../config/config';
+import useMapCamera from '../../hooks/useMapCamera';
 
 const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, avoidTolls }) => {
   const mapRef = useRef(null);
   const [routes, setRoutes] = useState([]);
   const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+  const { fitToCoordinates } = useMapCamera(mapRef);
 
   useEffect(() => {
     const fetchRoutes = async () => {
       try {
-        const response = await axios.get(`${API_URL}/navigation/preview`, { // Changé de preview à route
+        const response = await axios.get(`${API_URL}/api/navigation/preview`, {
           params: {
             origin: `${origin.latitude},${origin.longitude}`,
             destination: `${destination.latitude},${destination.longitude}`,
@@ -24,6 +25,13 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
         if (response.data.routes) {
           const twoRoutes = response.data.routes.slice(0, 2);
           setRoutes(twoRoutes);
+          
+          if (twoRoutes.length > 0 && twoRoutes[0].coordinates) {
+            fitToCoordinates(twoRoutes[0].coordinates, {
+              edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
+              animated: true
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to fetch routes:', error);
@@ -33,7 +41,8 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
     if (origin && destination) {
       fetchRoutes();
     }
-  }, [origin, destination, avoidTolls]); 
+  }, [origin, destination, avoidTolls, fitToCoordinates]);
+
   const handleRouteSelect = (index) => {
     setSelectedRouteIndex(index);
     const selectedRoute = routes[index];
@@ -47,7 +56,7 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
     }
 
     if (routes[index]?.coordinates) {
-      mapRef.current?.fitToCoordinates(routes[index].coordinates, {
+      fitToCoordinates(routes[index].coordinates, {
         edgePadding: { top: 50, right: 50, bottom: 200, left: 50 },
         animated: true
       });
@@ -55,18 +64,9 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
   };
 
   const handleStartNavigation = () => {
-    if (!routes[selectedRouteIndex]) {
-      console.warn('❌ No route selected!');
-      return;
-    }
-
+    if (!routes?.[selectedRouteIndex]) return;
+    
     const selectedRoute = routes[selectedRouteIndex];
-    console.log('✅ Starting navigation with route:', {
-      index: selectedRouteIndex,
-      summary: selectedRoute.summary,
-      avoidTolls: avoidTolls
-    });
-
     onStartNavigation({
       ...selectedRoute,
       index: selectedRouteIndex,

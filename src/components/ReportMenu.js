@@ -2,8 +2,7 @@ import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet, Animated, Alert, Modal, Text } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
-
-const API_URL = 'https://react-gpsapi.vercel.app/api';
+import { API_URL } from '../config/config';
 
 const ReportMenu = ({ location }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,6 +42,7 @@ const ReportMenu = ({ location }) => {
 
       Alert.alert('Succès', 'Alerte signalée avec succès');
     } catch (error) {
+      console.error('Report error:', error);
       Alert.alert('Erreur', 'Le signalement a échoué');
     }
 

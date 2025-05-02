@@ -3,6 +3,8 @@ import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import CryptoJS from 'crypto-js';
+import axios from 'axios';
+import { API_URL } from '../config/config';
 
 const RegisterModal = ({ visible, onClose }) => {
   const { login } = useAuth();
@@ -47,15 +49,8 @@ const RegisterModal = ({ visible, onClose }) => {
         password: hashPassword(formData.password)
       };
 
-      const response = await fetch('https://react-gpsapi.vercel.app/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(secureFormData),
-      });
-
-      const data = await response.json();
+      const response = await axios.post(`${API_URL}/auth/register`, secureFormData);
+      const data = response.data;
 
       if (data.success) {
         await login(data);
@@ -64,7 +59,12 @@ const RegisterModal = ({ visible, onClose }) => {
         setErrors({ submit: data.message || 'Erreur lors de l\'inscription' });
       }
     } catch (error) {
-      setErrors({ submit: 'Erreur de connexion au serveur' });
+      console.error('Register error:', error);
+      if (error.response) {
+        setErrors({ submit: error.response.data.message || 'Erreur lors de l\'inscription' });
+      } else {
+        setErrors({ submit: 'Erreur de connexion au serveur' });
+      }
     }
   };
 
