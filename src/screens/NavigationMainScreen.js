@@ -8,10 +8,11 @@ import ReportMenu from '../components/ReportMenu';
 import RoutePreview from '../components/RoutePreview/RoutePreview';
 import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
-import useCameraControl from '../hooks/useCameraControl';
+
 import globalStyles from '../styles/globalStyles';
 import { addToLocalHistory } from '../services/localHistoryService';
 import NavigationScreen from '../components/navigation/NavigationScreen';
+import useMapCamera from '../hooks/useMapCamera';
 
 export default function NavigationMainScreen() {
   const mapRef = useRef(null);
@@ -40,7 +41,7 @@ export default function NavigationMainScreen() {
     focusOnLocation,
     fitToCoordinates,
     temporarilyDisableTracking
-  } = useCameraControl(mapRef, location, heading, isNavigating);
+  } = useMapCamera(mapRef, location, heading, isNavigating);
   
   const [showRoutes, setShowRoutes] = useState(false);
   const [routes, setRoutes] = useState([]); // Ajout de routes state

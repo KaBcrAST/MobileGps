@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 
+// Hook principal avec fonctionnalités améliorées de style Waze/Google Maps
 const useMapCamera = (mapRef, location, heading, isNavigating, { destination, coordinates } = {}) => {
+  // États et références existants - inchangés
   const [isCameraLocked, setIsCameraLocked] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   
@@ -11,25 +13,43 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   const calculatedHeading = useRef(heading || 0);
   const isMovingBackward = useRef(false);
   const lastHeadings = useRef([]);
-  const movementHistory = useRef([]);
-  const lastDirectionChange = useRef(0);
-  const routeHeading = useRef(0);
-  const isInitialViewSet = useRef(false);
   const lastCameraUpdate = useRef(0);
   
-  // NOUVELLE RÉFÉRENCE: Pour empêcher les mises à jour automatiques
+  // Pour empêcher les mises à jour automatiques
   const blockAutoUpdates = useRef(false);
   
-  // Constantes
-  const MINIMUM_UPDATE_INTERVAL = 1500; // Augmenté pour limiter les mises à jour
+  // Constantes optimisées pour une expérience style Waze
+  const MINIMUM_UPDATE_INTERVAL = 800;
   const DIRECTION_THRESHOLD = 0.4;
-  const NAVIGATION_ALTITUDE = 70;
+  const NAVIGATION_ALTITUDE = 100;
   const NORMAL_ALTITUDE = 150;
-  const PREVIEW_ALTITUDE = 10000;
+  const PREVIEW_ALTITUDE = 1000;
+  const NAVIGATION_PITCH = 60;
+  const NORMAL_PITCH = 55;
+  
+  // SUPPRIMÉ: const VERTICAL_OFFSET = -0.0003;
+  // AJOUTÉ: Distance de décalage pour style Waze en mètres
+  const OFFSET_DISTANCE = 40; // 100 mètres de décalage
 
-  // Fonctions utilitaires (getDistance, getBearing, etc.)
+  // NOUVELLE FONCTION: Décaler un point géographique selon une direction et une distance
+  const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {
+    const earthRadius = 6378137; // Rayon moyen de la Terre en mètres
+    // Pour obtenir le décalage dans la direction opposée au heading, on ajoute 180°
+    const offsetHeading = (heading + 180) % 360;
+    
+    const deltaLat = (distanceInMeters * Math.cos(offsetHeading * Math.PI / 180)) / earthRadius;
+    const deltaLng = (distanceInMeters * Math.sin(offsetHeading * Math.PI / 180)) / (earthRadius * Math.cos(latitude * Math.PI / 180));
+    
+    return {
+      latitude: latitude + deltaLat * (180 / Math.PI),
+      longitude: longitude + deltaLng * (180 / Math.PI),
+    };
+  }, []);
+
+  // Fonctions utilitaires existantes - inchangées
   const getDistance = useCallback((point1, point2) => {
-    // Votre implémentation existante...
+    if (!point1 || !point2) return 0;
+    
     const R = 6371e3;
     const φ1 = point1.latitude * Math.PI / 180;
     const φ2 = point2.latitude * Math.PI / 180;
@@ -45,7 +65,8 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   }, []);
 
   const getBearing = useCallback((start, end) => {
-    // Votre implémentation existante...
+    if (!start || !end) return 0;
+    
     const startLat = start.latitude * Math.PI / 180;
     const startLng = start.longitude * Math.PI / 180;
     const endLat = end.latitude * Math.PI / 180;
@@ -64,56 +85,57 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     return bearing;
   }, []);
 
-  // NOUVELLE FONCTION: Mise à jour contrôlée de la caméra
-  const updateCamera = useCallback((params = {}, animationOptions = {}) => {
-    if (!mapRef?.current || !location?.coords) return;
+  const animateCameraSafely = useCallback((camera, options = { duration: 1000 }) => {
+    if (!mapRef?.current) return;
     
     try {
-      // Bloquer les mises à jour automatiques pendant un certain temps
-      blockAutoUpdates.current = true;
-      setTimeout(() => { blockAutoUpdates.current = false; }, 2000);
-      
-      // IMPORTANT: Protéger les paramètres actuels de la caméra
-      // Ne mettre à jour que ce qui est explicitement demandé
-      const cameraUpdate = {
-        center: {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        }
-      };
-      
-      // N'ajouter le heading que s'il est fourni ou disponible
-      if (params.heading !== undefined || calculatedHeading.current || heading) {
-        cameraUpdate.heading = params.heading !== undefined 
-          ? params.heading 
-          : calculatedHeading.current || heading || 0;
-      }
-      
-      // N'ajouter ces propriétés que si elles sont explicitement fournies
-      if (params.pitch !== undefined) cameraUpdate.pitch = params.pitch;
-      if (params.altitude !== undefined) cameraUpdate.altitude = params.altitude;
-      if (params.zoom !== undefined) cameraUpdate.zoom = params.zoom;
-      
-      // Options d'animation par défaut
-      const finalOptions = { 
-        duration: animationOptions.duration || 800
-      };
-      
-      // Mettre à jour la dernière fois que la caméra a été modifiée
-      lastCameraUpdate.current = Date.now();
-      
-      // Appliquer l'animation avec seulement les paramètres nécessaires
-      console.log(`📸 Mise à jour caméra:`, 
-        cameraUpdate.heading ? `heading=${Math.round(cameraUpdate.heading)}°` : '',
-        cameraUpdate.pitch ? `pitch=${cameraUpdate.pitch}°` : '');
-      
-      return mapRef.current.animateCamera(cameraUpdate, finalOptions);
+      mapRef.current.animateCamera(camera, options);
     } catch (error) {
-      console.error('Erreur lors de la mise à jour de la caméra:', error);
+      console.error('Failed to animate camera:', error);
     }
-  }, [mapRef, location, heading]);
+  }, [mapRef]);
 
-  // Détection de la direction de déplacement
+  // MODIFIÉ: Configuration de caméra avec décalage dynamique style Waze
+  const getCameraConfig = useCallback((coords, navigating, currentHeading) => {
+    if (!coords) return null;
+    
+    const headingToUse = currentHeading || 0;
+    
+    return {
+      // MODIFIÉ: Utiliser offsetCoordinates pour un décalage directionnel
+      center: navigating
+        ? offsetCoordinates(coords.latitude, coords.longitude, headingToUse, OFFSET_DISTANCE)
+        : { latitude: coords.latitude, longitude: coords.longitude },
+      pitch: navigating ? NAVIGATION_PITCH : NORMAL_PITCH,
+      heading: headingToUse,
+      altitude: navigating ? NAVIGATION_ALTITUDE : NORMAL_ALTITUDE,
+      zoom: navigating ? 17 : 16,
+    };
+  }, [offsetCoordinates]);
+
+  // Autres fonctions existantes - inchangées
+  const temporarilyDisableTracking = useCallback((durationMs = 5000) => {
+    blockAutoUpdates.current = true;
+    
+    // Réactiver après la durée spécifiée
+    setTimeout(() => {
+      blockAutoUpdates.current = false;
+    }, durationMs);
+  }, []);
+
+  const findNextPoint = useCallback((currentPosition, routeCoordinates) => {
+    if (!routeCoordinates || !Array.isArray(routeCoordinates) || routeCoordinates.length < 2) return null;
+    
+    for (let i = 0; i < routeCoordinates.length; i++) {
+      const point = routeCoordinates[i];
+      const distance = getDistance(currentPosition, point);
+      if (distance > 30) return point;
+    }
+    
+    return routeCoordinates[routeCoordinates.length - 1];
+  }, [getDistance]);
+
+  // Effet de détection de la direction - inchangé
   useEffect(() => {
     if (!location?.coords || !isCameraLocked) return;
 
@@ -155,59 +177,20 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
         const smoothedHeading = (Math.atan2(sumY, sumX) * 180 / Math.PI + 360) % 360;
 
         calculatedHeading.current = smoothedHeading;
-        
-        // Log pour débogage
-        const directionEmoji = isMovingBackward.current ? "⬇️ RECUL" : "⬆️ AVANT";
-        console.log(`🧭 ${directionEmoji} — Cap: ${Math.round(smoothedHeading)}° (${Math.round(speed * 3.6)} km/h)`);
       }
     }
 
     previousPosition.current = currentPosition;
   }, [location?.coords?.latitude, location?.coords?.longitude, heading, isCameraLocked, getDistance, getBearing]);
 
-  // MODIFIÉ: Effet principal de mise à jour de la caméra en mode normal
-  useEffect(() => {
-    // DÉSACTIVER COMPLÈTEMENT les mises à jour automatiques basées sur la position GPS
-    // En ajoutant un simple return, l'effet n'exécutera aucun code
-    return;
-
-    /* Code désactivé ci-dessous:
-    if (!mapRef?.current || 
-        !location?.coords || 
-        !isCameraLocked || 
-        !initialViewApplied.current || 
-        isNavigating) { 
-      return;
-    }
-    
-    const now = Date.now();
-    if (now - lastCameraUpdate.current < MINIMUM_UPDATE_INTERVAL) {
-      return;
-    }
-    
-    mapRef.current.animateCamera({
-      center: {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-      heading: calculatedHeading.current || heading || 0
-    }, { 
-      duration: 800
-    });
-    
-    lastCameraUpdate.current = now;
-    */
-    
-  }, [mapRef, location?.coords?.latitude, location?.coords?.longitude, isCameraLocked, heading]);
-
-  // MODIFIÉ: Effet pour le mode navigation
+  // MODIFIÉ: Effet principal pour le mode navigation avec UI type Waze
   useEffect(() => {
     if (!isNavigating || !mapRef?.current || !location?.coords || !isCameraLocked || blockAutoUpdates.current) {
       return;
     }
     
     const now = Date.now();
-    if (now - lastUpdateTime.current < 800) {
+    if (now - lastUpdateTime.current < MINIMUM_UPDATE_INTERVAL) {
       return;
     }
     
@@ -216,33 +199,28 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     const nextPoint = findNextPoint(location.coords, coordinates);
     const directionToUse = nextPoint ? getBearing(location.coords, nextPoint) : (calculatedHeading.current || heading || 0);
     
-    updateCamera({
-      center: {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-      pitch: 60, // En mode navigation, on peut spécifier le pitch
+    // MODIFIÉ: Utiliser offsetCoordinates pour calculer le centre de la caméra
+    const offsetCenter = offsetCoordinates(
+      location.coords.latitude, 
+      location.coords.longitude, 
+      directionToUse, 
+      OFFSET_DISTANCE
+    );
+    
+    // Créer une configuration de caméra style Waze avec point GPS décalé en fonction de la direction
+    const camera = {
+      center: offsetCenter,
+      pitch: NAVIGATION_PITCH,
       heading: directionToUse,
       altitude: NAVIGATION_ALTITUDE,
-      zoom: 18
-    });
+      zoom: 17
+    };
     
-  }, [mapRef, location?.coords?.latitude, location?.coords?.longitude, isNavigating, isCameraLocked, updateCamera]);
+    animateCameraSafely(camera, { duration: 800 });
+    
+  }, [mapRef, location?.coords?.latitude, location?.coords?.longitude, isNavigating, isCameraLocked, coordinates, heading, getBearing, findNextPoint, animateCameraSafely, offsetCoordinates]);
 
-  // Fonction pour trouver le prochain point
-  const findNextPoint = useCallback((currentPosition, routeCoordinates) => {
-    if (!routeCoordinates || !Array.isArray(routeCoordinates) || routeCoordinates.length < 2) return null;
-    
-    for (let i = 0; i < routeCoordinates.length; i++) {
-      const point = routeCoordinates[i];
-      const distance = getDistance(currentPosition, point);
-      if (distance > 30) return point;
-    }
-    
-    return routeCoordinates[routeCoordinates.length - 1];
-  }, [getDistance]);
-
-  // MODIFIÉ: Vue initiale
+  // Le reste du code reste inchangé
   const forceInitialLowView = useCallback(() => {
     if (!mapRef?.current || !location?.coords) return;
     if (initialViewApplied.current) return; // Éviter les appels multiples
@@ -258,26 +236,24 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
-        pitch: 45,
+        pitch: NORMAL_PITCH,
         heading: directionToUse,
         altitude: NORMAL_ALTITUDE,
         zoom: 17
       });
       
       initialViewApplied.current = true;
-      console.log('✅ INITIAL LOW VIEW APPLIED');
       
       // Débloquer après un délai
       setTimeout(() => {
         blockAutoUpdates.current = false;
       }, 2000);
     } catch (error) {
-      console.error('Failed to force low view:', error);
+      console.error('Failed to force initial view:', error);
       blockAutoUpdates.current = false;
     }
   }, [mapRef, location, heading]);
 
-  // Appliquer la vue initiale
   useEffect(() => {
     if (mapRef?.current && location?.coords && !initialViewApplied.current) {
       const timer = setTimeout(forceInitialLowView, 500);
@@ -285,7 +261,6 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     }
   }, [mapRef, location, forceInitialLowView]);
 
-  // Gestion du verrouillage de caméra
   const unlockCamera = useCallback(() => {
     console.log('🔓 Camera unlocked');
     setIsCameraLocked(false);
@@ -297,56 +272,75 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     
     // Réinitialiser la vue avec le nouveau cap
     if (location?.coords) {
-      updateCamera({
-        center: {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        },
-        pitch: isNavigating ? 60 : 45,
-        heading: calculatedHeading.current || heading || 0,
-        altitude: isNavigating ? NAVIGATION_ALTITUDE : NORMAL_ALTITUDE,
-        zoom: isNavigating ? 18 : 17
-      });
+      const camera = getCameraConfig(location.coords, isNavigating, calculatedHeading.current || heading);
+      animateCameraSafely(camera, { duration: 500 });
     }
-  }, [location, heading, isNavigating, updateCamera]);
+  }, [location, heading, isNavigating, getCameraConfig, animateCameraSafely]);
 
-  // Ajoutez cette fonction dans votre hook useMapCamera
+  const resetCameraView = useCallback(() => {
+    if (!location?.coords) return;
+    
+    const camera = getCameraConfig(location.coords, isNavigating, calculatedHeading.current || heading);
+    animateCameraSafely(camera, { duration: 500 });
+  }, [location, isNavigating, heading, getCameraConfig, animateCameraSafely]);
 
-  // Fonction pour ajuster la vue aux coordonnées d'une route
+  const focusOnLocation = useCallback((coords, options = {}) => {
+    if (!mapRef?.current || !coords) return;
+    
+    // Désactiver temporairement le suivi automatique
+    temporarilyDisableTracking(options.trackingDisableDuration || 3000);
+    
+    const camera = {
+      center: {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      },
+      pitch: options.pitch || NORMAL_PITCH,
+      heading: options.heading || calculatedHeading.current || heading || 0,
+      altitude: options.altitude || NORMAL_ALTITUDE / 2,
+      zoom: options.zoom || 17,
+    };
+    
+    animateCameraSafely(camera, { duration: options.duration || 800 });
+  }, [mapRef, heading, animateCameraSafely, temporarilyDisableTracking]);
+
   const fitToCoordinates = useCallback((coordinates, options = {}) => {
     if (!mapRef?.current || !coordinates || coordinates.length < 2) {
-      console.log("⚠️ Impossible d'ajuster la vue aux coordonnées:", { 
-        mapRef: !!mapRef?.current, 
-        hasCoords: !!coordinates,
-        coordsLength: coordinates?.length 
-      });
       return;
     }
     
+    // Désactiver temporairement le suivi automatique
+    temporarilyDisableTracking(options.trackingDisableDuration || 5000);
+    
     try {
-      // Utiliser la méthode native de MapView
       mapRef.current.fitToCoordinates(coordinates, {
         edgePadding: options.edgePadding || { top: 100, right: 100, bottom: 100, left: 100 },
         animated: options.animated !== false
       });
-      console.log(`📍 Vue ajustée à ${coordinates.length} coordonnées`);
     } catch (error) {
-      console.error("❌ Erreur lors de l'ajustement de la vue:", error);
+      console.error("Erreur lors de l'ajustement de la vue:", error);
     }
-  }, [mapRef]);
+  }, [mapRef, temporarilyDisableTracking]);
 
-  // Et n'oubliez pas d'ajouter cette fonction à votre objet retourné
+  // Retourne les états et fonctions - fusionné avec les améliorations Waze
   return {
     isCameraLocked,
     isPreviewMode,
     unlockCamera,
     lockCamera,
+    resetCameraView,
+    focusOnLocation,
+    forceInitialLowView,
+    fitToCoordinates,
+    temporarilyDisableTracking,
     NAVIGATION_ALTITUDE,
     PREVIEW_ALTITUDE,
-    NORMAL_ALTITUDE,
-    forceInitialLowView,
-    fitToCoordinates // Ajoutez cette fonction ici
+    NORMAL_ALTITUDE
   };
 };
 
+// Export par défaut de useMapCamera
 export default useMapCamera;
+
+// Réexportation pour compatibilité avec useCameraControl
+export const useCameraControl = useMapCamera;
