@@ -1,4 +1,7 @@
 import { useState, useRef } from 'react';
+import React from 'react';
+
+
 import { View, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileSection from './ProfileSection';

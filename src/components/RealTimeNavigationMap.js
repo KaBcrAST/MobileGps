@@ -222,7 +222,7 @@ const Map = ({
         ref={mapRef}
         style={mapStyles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-        showsUserLocation={true}
+        showsUserLocation={false}
         followsUserLocation={false}  // ✅ Correct pour votre cas d'usage
         showsCompass={true}
         rotateEnabled={!isNavigating}
@@ -280,21 +280,6 @@ const Map = ({
                 </View>
               </Marker>
             ))}
-
-            {location && (
-              <Marker
-                coordinate={{
-                  latitude: location.coords.latitude,
-                  longitude: location.coords.longitude
-                }}
-                flat
-                anchor={{ x: 0.5, y: 0.5 }}
-              >
-                <View style={styles.userLocationDot}>
-                  <View style={styles.innerDot} />
-                </View>
-              </Marker>
-            )}
           </>
         )}
       </MapView>

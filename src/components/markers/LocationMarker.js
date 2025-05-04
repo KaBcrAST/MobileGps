@@ -1,56 +1,32 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Image } from 'react-native';
 import { Marker } from 'react-native-maps';
 
 const LocationMarker = ({ location, heading, mapRef }) => {
   if (!location) return null;
 
-  useEffect(() => {
-    if (mapRef?.current && heading !== null) {
-      mapRef.current.animateCamera({
-        center: {
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        },
-        heading: heading,
-        pitch: 60,
-        altitude: 500,
-        duration: 1000
-      });
-    }
-  }, [heading, location.coords]);
-
   return (
     <Marker 
       coordinate={location.coords} 
       flat 
-      anchor={{ x: 0.5, y: 0.5 }} 
+      anchor={{ x: 0.5, y: 0.5 }}
       rotation={heading}
       zIndex={1000}
+      tracksViewChanges={false}
     >
-      <View style={styles.userLocationDot}>
-        <View style={styles.innerDot} />
-      </View>
+      <Image 
+        source={require('../../../assets/navigation.png')} // Assurez-vous d'avoir cette image
+        style={styles.arrowImage} 
+      />
     </Marker>
   );
 };
 
 const styles = StyleSheet.create({
-  userLocationDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(52, 152, 219, 0.3)',
-    borderWidth: 2,
-    borderColor: '#3498db',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  innerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3498db'
+  arrowImage: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain'
   }
 });
 
