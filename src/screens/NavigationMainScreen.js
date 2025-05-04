@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Map from '../components/RealTimeNavigationMap';
+import Map from '../components/MapDisplay';
 import SearchBar from '../components/SearchBar';
 import BlockInfo from '../components/BlockInfo';
 import FloatingMenu from '../components/FloatingMenu';

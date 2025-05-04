@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import Map from './RealTimeNavigationMap';
+import Map from './MapDisplay';
 import SearchBar from './SearchBar';
 import RouteSelection from '../components/RouteSelection';
 import BlockInfo from './BlockInfo';
@@ -45,24 +45,9 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <Map
-        mapRef={mapRef}
-        location={location}
-        destination={destination}
-        heading={heading}
-        isNavigating={isNavigating}
-        activeRoute={activeRoute}
-        setRouteInfo={setRouteInfo}
-        followsUserLocation={false} // Forcer à false au lieu de isCameraLocked
-      />
-      <SearchBar onPlaceSelect={handlePlaceSelect} />
-      <BlockInfo 
-        speed={speed}
-        location={location}
-        destination={destination}
-        isNavigating={isNavigating}
-      />
-      <FloatingMenu />
+      
+      
+      
       
       {isNavigating && routeInfo && (
         <NavigationStats 

@@ -20,12 +20,12 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   
   // Constantes optimisées pour une expérience style Waze
   const MINIMUM_UPDATE_INTERVAL = 800;
-  const DIRECTION_THRESHOLD = 0.4;
+  const DIRECTION_THRESHOLD = 0.3;
   const NAVIGATION_ALTITUDE = 30;
   const NORMAL_ALTITUDE = 100;
   const PREVIEW_ALTITUDE = 1000;
-  const NAVIGATION_PITCH = 75;
-  const NORMAL_PITCH = 60;
+  const NAVIGATION_PITCH = 80;
+  const NORMAL_PITCH = 65;
   
   // SUPPRIMÉ: const VERTICAL_OFFSET = -0.0003;
   // AJOUTÉ: Distance de décalage pour style Waze en mètres
