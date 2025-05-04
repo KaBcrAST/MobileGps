@@ -28,7 +28,7 @@ const ReportMenu = ({ location }) => {
     }
 
     try {
-      await axios.post(`${API_URL}/reports`, {
+      await axios.post(`${API_URL}/api/reports`, {
         type,
         latitude: location.coords.latitude,
         longitude: location.coords.longitude

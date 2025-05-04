@@ -2,8 +2,9 @@ import React from 'react';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import ClusterAlert from './ClusterAlert';
+import { API_URL } from '../../config/config';
 
-const API_URL = 'https://react-gpsapi.vercel.app/api';
+
 
 const ClusterOverlay = ({ 
   nearbyCluster, 
@@ -15,7 +16,7 @@ const ClusterOverlay = ({
 
   const handleStillPresent = async () => {
     try {
-      const response = await axios.post(`${API_URL}/reports`, {
+      const response = await axios.post(`${API_URL}/api/reports`, {
         type: nearbyCluster.type,
         latitude: nearbyCluster.location.coordinates[1],
         longitude: nearbyCluster.location.coordinates[0]

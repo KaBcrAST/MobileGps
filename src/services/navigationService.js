@@ -67,7 +67,7 @@ export const navigationService = {
         destination: formattedDestination
       });
 
-      const response = await axios.get(`${API_URL}/route`, {
+      const response = await axios.get(`${API_URL}/api/route`, {
         params: {
           origin: formattedOrigin,
           destination: formattedDestination
