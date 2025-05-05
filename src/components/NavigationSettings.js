@@ -8,7 +8,7 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
   const [isTollDropdownOpen, setIsTollDropdownOpen] = useState(false);
   const [avoidTolls, setAvoidTolls] = useState(false);
 
-  // Load saved preference on mount
+  //pt
   useEffect(() => {
     loadTollPreference();
   }, []);

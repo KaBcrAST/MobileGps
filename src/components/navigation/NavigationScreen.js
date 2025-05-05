@@ -5,7 +5,7 @@ import Map from '../RealTimeNavigationMap';
 import SpeedLimitSign from '../SpeedLimitSign';
 import BlockInfo from '../BlockInfo';
 import NavigationInstruction from './NavigationInstruction';
-// pas toucher
+//pt
 const NavigationScreen = ({
   mapRef,
   location,

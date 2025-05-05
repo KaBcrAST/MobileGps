@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
 import { API_URL } from '../../config/config';
-
+//pt
 const formatInstruction = (instruction) => {
   if (!instruction) return 'Continuez tout droit';
 

@@ -16,8 +16,7 @@ import LocationMarker from './markers/LocationMarker';
 import { API_URL } from '../config/config';
 import useMapCamera from '../hooks/useMapCamera';
 
-// Ajoutez un état de loading dans votre composant Map
-
+//normal display sans navigation
 const Map = ({ 
   mapRef,
   location,

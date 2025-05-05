@@ -29,7 +29,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   
   // CORRECTION: Décalage vers l'AVANT en mode navigation (valeur positive)
   // Ce qui placera la caméra derrière le point GPS
-  const OFFSET_DISTANCE = 30; // Décalage de 30 mètres dans la direction du regard
+  const OFFSET_DISTANCE = 40; // Décalage de 30 mètres dans la direction du regard
 
   // Amélioration de la fonction offsetCoordinates pour de grands décalages
   const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {

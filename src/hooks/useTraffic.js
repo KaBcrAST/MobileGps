@@ -13,7 +13,7 @@ export const useTraffic = (location, destination) => {
 
     setLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/traffic/route`, {
+      const response = await axios.get(`${API_URL}`, {
         params: {
           origin: `${location.coords.latitude},${location.coords.longitude}`,
           destination: `${destination.latitude},${destination.longitude}`

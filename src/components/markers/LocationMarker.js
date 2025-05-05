@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { Marker } from 'react-native-maps';
-
+//pt
 const LocationMarker = ({ location, heading }) => {
   if (!location) return null;
 

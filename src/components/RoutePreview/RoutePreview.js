@@ -4,7 +4,7 @@ import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
 import axios from 'axios';
 import { API_URL } from '../../config/config';
 import useMapCamera from '../../hooks/useMapCamera';
-//pas toucher
+//pt
 const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, avoidTolls }) => {
   const mapRef = useRef(null);
   const [routes, setRoutes] = useState([]);

@@ -15,7 +15,7 @@ import RoutePolylines from './routes/RoutePolylines';
 import LocationMarker from './markers/LocationMarker';
 import { API_URL } from '../config/config';
 import useMapCamera from '../hooks/useMapCamera';
-
+//a opti
 // Ajoutez un état de loading dans votre composant Map
 
 const Map = ({ 
@@ -103,31 +103,9 @@ const Map = ({
     };
   }, [isNavigating]);
 
-  // Charger la configuration de la carte
-  useEffect(() => {
-    const getMapConfig = async () => {
-      try {
-        const { data } = await axios.get(`${API_URL}/api/map/config`);
-        setMapConfig(data);
-      } catch (error) {
-        console.error('Error loading map config:', error);
-        setMapConfig({
-          initialRegion: {
-            latitude: 48.8584,
-            longitude: 2.2945,
-            latitudeDelta: 0.1,
-            longitudeDelta: 0.1
-          }
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  
 
-    getMapConfig();
-  }, []);
-
-  // Récupérer les clusters
+  // Récupérer les clusters sert
   useEffect(() => {
     const fetchClusters = async () => {
       if (!location?.coords) return;
@@ -169,7 +147,7 @@ const Map = ({
     return () => clearInterval(interval);
   }, [location]);
 
-  // Gérer l'affichage de la route
+  // Gérer l'affichage de la route sert
   useEffect(() => {
     setShowRoute(isNavigating);
   }, [isNavigating]);
@@ -196,14 +174,7 @@ const Map = ({
     }, 500);
   };
 
-  // Cherchez et modifiez des effets comme celui-ci:
-  useEffect(() => {
-    if (mapRef.current && location?.coords) {
-      // Si vous voyez du code qui met à jour la caméra ici, commentez-le
-      // mapRef.current.animateCamera({...});
-    }
-  }, [location]);
-
+ 
   // Afficher l'indicateur de chargement
   if (loading) {
     return (
@@ -213,9 +184,6 @@ const Map = ({
     );
   }
 
-  if (showRoutes && !isNavigating) {
-    return null;
-  }
 
   return (
     <View style={styles.container}>
@@ -285,12 +253,6 @@ const Map = ({
         )}
       </MapView>
 
-      <ClusterOverlay
-        nearbyCluster={nearbyCluster}
-        clusterDistance={clusterDistance}
-        setNearbyCluster={setNearbyCluster}
-        setClusterDistance={setClusterDistance}
-      />
 
       {!isNavigating && (
         <>
@@ -324,36 +286,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f0f0f0'
   },
-  userLocationDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(52, 152, 219, 0.3)',
-    borderWidth: 2,
-    borderColor: '#3498db',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  innerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3498db'
-  },
-  topViewButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#3498db',
-    padding: 10,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  followButton: {
-    bottom: 80, // Positionnez ce bouton au-dessus du premier
-    backgroundColor: '#27ae60' // Une couleur différente pour distinguer
-  }
+  
+ 
+  
+  
 });
 
 export default Map;
