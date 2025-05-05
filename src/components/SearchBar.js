@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, Animated, Dimensions, TouchableOpacity, ScrollView, Text } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import axios from 'axios';
-
+//intégré l'historique dedans 
 const API_URL = 'https://react-gpsapi.vercel.app/api/search';
 const windowHeight = Dimensions.get('window').height;
 

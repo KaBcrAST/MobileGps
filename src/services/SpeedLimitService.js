@@ -2,8 +2,6 @@ import axios from 'axios';
 
 const API_URL = 'https://react-gpsapi.vercel.app/api';
 
-// Add retry utility
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Export the decode polyline utility
 export const decodePolyline = (encoded) => {
@@ -53,53 +51,7 @@ export const decodePolyline = (encoded) => {
 export const navigationService = {
   decodePolyline,
 
-  async getRoute(origin, destination) {
-    if (!origin || !destination) {
-      throw new Error('Origin and destination are required');
-    }
 
-    try {
-      const formattedOrigin = this.formatCoords(origin);
-      const formattedDestination = this.formatCoords(destination);
-
-      console.log('🚗 Requesting route:', {
-        origin: formattedOrigin,
-        destination: formattedDestination
-      });
-
-      const response = await axios.get(`${API_URL}/api/route`, {
-        params: {
-          origin: formattedOrigin,
-          destination: formattedDestination
-        },
-        timeout: 10000
-      });
-
-      if (response.data?.routes) {
-        // Process each route to ensure proper coordinate encoding
-        response.data.routes = response.data.routes.map(route => {
-          // Get the encoded polyline from the route
-          const encodedPolyline = route.overview_polyline?.points || route.polyline;
-          
-          // Decode the polyline into coordinates
-          const coordinates = this.decodePolyline(encodedPolyline);
-
-          return {
-            ...route,
-            coordinates,
-            polyline: encodedPolyline
-          };
-        });
-      }
-
-      console.log(`✅ Found ${response.data?.routes?.length} routes`);
-      return response.data;
-
-    } catch (error) {
-      console.error('❌ Navigation error:', error);
-      throw error;
-    }
-  },
 
   async getSpeedLimit(location, retries = 2) {
     if (!location?.coords?.latitude || !location?.coords?.longitude) {
@@ -170,34 +122,4 @@ export const navigationService = {
   }
 };
 
-const fetchRouteDetails = async (origin, destination, index) => {
-  try {
-    const response = await axios.get(`${API_URL}/navigation/route`, {
-      params: {
-        origin,
-        destination,
-        routeIndex: index
-      }
-    });
-    
-    return response.data;
-  } catch (error) {
-    console.error('Failed to fetch route details:', error);
-    return null;
-  }
-};
 
-export const getRouteDetails = async (origin, destination) => {
-  try {
-    const response = await axios.get(`${API_URL}/navigation/details`, {
-      params: {
-        origin: `${origin.latitude},${origin.longitude}`,
-        destination: `${destination.latitude},${destination.longitude}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Failed to fetch route details:', error);
-    return null;
-  }
-};

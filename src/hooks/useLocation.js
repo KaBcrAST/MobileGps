@@ -81,10 +81,6 @@ export default function useLocation(mapRef) {
         out body;
       `;
       
-      const response = await fetch(
-        `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
-      );
-      
       const data = await response.json();
       
       if (data.elements?.[0]?.tags?.maxspeed) {

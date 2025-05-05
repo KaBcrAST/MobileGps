@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../config/config';
 
+
+//pt
 const STORAGE_KEY = 'avoidTolls';
 const DEFAULT_ZOOM = 15;
 const ANIMATION_DURATION = 1000;
@@ -34,7 +36,7 @@ const useNavigationLogic = (location, mapRef) => {
     if (!location?.coords || !destination) return;
 
     try {
-      const response = await axios.get(`${API_URL}/navigation/route`, {
+      const response = await axios.get(`${API_URL}/navigation/route`, { //verifier
         params: {
           origin: `${location.coords.latitude},${location.coords.longitude}`,
           destination: `${destination.latitude},${destination.longitude}`,
