@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Polyline } from 'react-native-maps';
-import useMapCamera from '../../hooks/useMapCamera';
 
 const RoutePolylines = ({ 
   showRoutes,
@@ -17,91 +16,26 @@ const RoutePolylines = ({
   const [currentSegment, setCurrentSegment] = useState([]);
   const [remainingSegment, setRemainingSegment] = useState([]);
   const previousUserPosition = useRef(null);
+  const lastClosestPointIndex = useRef(0);
   
-  // Fonction améliorée pour ajuster les coordonnées
-  const adjustCoordinates = (coordinates) => {
-    if (!coordinates || coordinates.length === 0) return [];
-    
-    // Facteur de correction plus précis
-    const latitudeOffset = 0; // Aucun décalage par défaut
-    const longitudeOffset = 0;
-    
-    return coordinates.map(coord => ({
-      latitude: coord.latitude + latitudeOffset,
-      longitude: coord.longitude + longitudeOffset
-    }));
-  };
-
-  // Ajuster les coordonnées quand activeRoute change
+  // Initialisation des coordonnées quand activeRoute change
   useEffect(() => {
     if (activeRoute?.coordinates && activeRoute.coordinates.length > 0) {
-      adjustedCoordinates.current = adjustCoordinates(activeRoute.coordinates);
+      // Utiliser directement les coordonnées détaillées de l'API
+      // Elles sont déjà alignées sur les routes grâce à Google Directions
+      adjustedCoordinates.current = activeRoute.coordinates;
+      
+      // Réinitialiser l'index du point le plus proche
+      lastClosestPointIndex.current = 0;
     } else {
       adjustedCoordinates.current = null;
     }
   }, [activeRoute]);
 
-  // Mise à jour dynamique des segments actuels et restants
-  useEffect(() => {
-    if (!isNavigating || !location?.coords || !adjustedCoordinates.current) {
-      setCurrentSegment([]);
-      setRemainingSegment([]);
-      return;
-    }
-
-    const coords = adjustedCoordinates.current;
-    if (!coords || coords.length === 0) return;
-
-    // Trouver l'index du point le plus proche de la position actuelle
-    let closestPointIndex = 0;
-    let minDistance = Infinity;
-
-    for (let i = 0; i < coords.length; i++) {
-      const distance = calculateDistance(
-        location.coords.latitude,
-        location.coords.longitude,
-        coords[i].latitude,
-        coords[i].longitude
-      );
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPointIndex = i;
-      }
-    }
-
-    // Ajuster le segment actuel en fonction de la position réelle de l'utilisateur
-    const userPosition = { 
-      latitude: location.coords.latitude, 
-      longitude: location.coords.longitude 
-    };
-
-    // ✨ AMÉLIORATION: Créer un tableau de positions dynamique pour le segment actuel
-    let actualCurrentSegment = [];
-    
-    // Ajouter les dernières positions connues de l'utilisateur au segment actuel
-    if (previousUserPosition.current) {
-      actualCurrentSegment = [previousUserPosition.current];
-    }
-    
-    // Ajouter la position actuelle
-    actualCurrentSegment.push(userPosition);
-
-    // Mettre à jour la position précédente
-    previousUserPosition.current = userPosition;
-    
-    // Segment actuel: positions de l'utilisateur + quelques points du tracé devant
-    setCurrentSegment([
-      ...actualCurrentSegment,
-      ...coords.slice(Math.max(0, closestPointIndex - 1), closestPointIndex + 2)
-    ]);
-
-    // Segment restant: du point le plus proche jusqu'à la fin
-    setRemainingSegment(coords.slice(closestPointIndex));
-  }, [isNavigating, location?.coords?.latitude, location?.coords?.longitude, activeRoute]);
-
-  // Fonction utilitaire pour calculer la distance entre deux points
+  // Calcul de distance entre deux points géographiques
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    
     const R = 6371e3; // Rayon de la Terre en mètres
     const φ1 = lat1 * Math.PI/180;
     const φ2 = lat2 * Math.PI/180;
@@ -112,15 +46,80 @@ const RoutePolylines = ({
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c; // Distance en mètres
+    return R * c;
   };
 
-  // Rendu des itinéraires en mode sélection ou navigation
+  // Mise à jour des segments de route en fonction de la position
+  useEffect(() => {
+    if (!isNavigating || !location?.coords || !adjustedCoordinates.current) {
+      setCurrentSegment([]);
+      setRemainingSegment([]);
+      return;
+    }
+
+    const routeCoords = adjustedCoordinates.current;
+    
+    // Trouver l'index du point le plus proche sur la route
+    let closestPointIndex = lastClosestPointIndex.current;
+    let minDistance = Infinity;
+    
+    // Optimisation: chercher à partir du dernier point trouvé et quelques points avant
+    // pour éviter de sauter des segments en cas de détection imprécise
+    const searchStart = Math.max(0, closestPointIndex - 5);
+    // Limiter la recherche vers l'avant pour améliorer les performances
+    const searchEnd = Math.min(routeCoords.length, closestPointIndex + 30);
+    
+    for (let i = searchStart; i < searchEnd; i++) {
+      const distance = calculateDistance(
+        location.coords.latitude,
+        location.coords.longitude,
+        routeCoords[i].latitude,
+        routeCoords[i].longitude
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPointIndex = i;
+      }
+    }
+    
+    // Mettre à jour l'index du point le plus proche
+    lastClosestPointIndex.current = closestPointIndex;
+    
+    // Position actuelle de l'utilisateur
+    const userPosition = { 
+      latitude: location.coords.latitude, 
+      longitude: location.coords.longitude 
+    };
+    
+    // Construire le segment actuel (parcouru)
+    let actualCurrentSegment = [];
+    
+    // Ajouter la position précédente pour une transition fluide
+    if (previousUserPosition.current) {
+      actualCurrentSegment.push(previousUserPosition.current);
+    }
+    
+    // Ajouter la position actuelle
+    actualCurrentSegment.push(userPosition);
+    previousUserPosition.current = userPosition;
+    
+    // Segment actuel: points déjà parcourus + position actuelle
+    setCurrentSegment([
+      ...routeCoords.slice(0, closestPointIndex + 1),
+      userPosition
+    ]);
+    
+    // Segment restant: du point actuel jusqu'à la fin
+    setRemainingSegment(routeCoords.slice(Math.max(0, closestPointIndex)));
+  }, [isNavigating, location?.coords?.latitude, location?.coords?.longitude]);
+
+  // Rendu des itinéraires en mode sélection
   if (showRoutes && routes && routes.length > 0) {
     return routes.map((route, index) => (
       <Polyline
         key={`route-${index}`}
-        coordinates={adjustCoordinates(route.coordinates)}
+        coordinates={route.coordinates}
         strokeWidth={selectedRoute === index ? 8 : 4}
         strokeColor={selectedRoute === index ? '#3498db' : '#bdc3c7'}
         tappable={true}
@@ -136,7 +135,7 @@ const RoutePolylines = ({
   if (isNavigating && activeRoute) {
     return (
       <>
-        {/* Segment parcouru/actuel avec une couleur plus vive */}
+        {/* Segment parcouru avec une couleur plus vive */}
         {currentSegment.length > 1 && (
           <Polyline
             coordinates={currentSegment}
@@ -153,7 +152,7 @@ const RoutePolylines = ({
           <Polyline
             coordinates={remainingSegment}
             strokeWidth={6}
-            strokeColor="#95c9f1" // Bleu plus clair pour le segment restant
+            strokeColor="#95c9f1" // Bleu plus clair
             zIndex={2}
             lineCap="round"
             lineJoin="round"

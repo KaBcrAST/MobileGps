@@ -68,13 +68,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  infoContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    width: '100%'
-  },
+  
   endButton: {
     position: 'absolute',
     bottom: 20,

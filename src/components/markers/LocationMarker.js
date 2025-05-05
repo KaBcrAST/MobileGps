@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Image } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 import { Marker } from 'react-native-maps';
-//pt
+
 const LocationMarker = ({ location, heading }) => {
   if (!location) return null;
 
@@ -12,7 +12,7 @@ const LocationMarker = ({ location, heading }) => {
       rotation={heading || 0}
       zIndex={1000}
       tracksViewChanges={false}
-      flat={true} // Assurez-vous que ce paramètre est true pour que la rotation fonctionne
+      flat={true}
     >
       <Image 
         source={require('../../../assets/navigation.png')} 

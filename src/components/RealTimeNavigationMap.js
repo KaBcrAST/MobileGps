@@ -15,8 +15,6 @@ import RoutePolylines from './routes/RoutePolylines';
 import LocationMarker from './markers/LocationMarker';
 import { API_URL } from '../config/config';
 import useMapCamera from '../hooks/useMapCamera';
-//a opti
-// Ajoutez un état de loading dans votre composant Map
 
 const Map = ({ 
   mapRef,
@@ -60,14 +58,6 @@ const Map = ({
     coordinates: activeRoute?.coordinates 
   });
 
-  // Supprimer ou mettre en commentaire ce second useMapCamera qui cause des conflits
-  // const { 
-  //   setCameraMode // Extraire cette fonction
-  // } = useMapCamera(mapRef, location, heading, isNavigating, { 
-  //   destination, 
-  //   coordinates: activeRoute?.coordinates 
-  // });
-
   // Vous pouvez définir une fonction locale pour remplacer setCameraMode
   const handleViewMode = (mode) => {
     console.log(`Mode vue: ${mode}`);
@@ -102,8 +92,6 @@ const Map = ({
       console.log('🗺️ Map Component: Cleanup triggered');
     };
   }, [isNavigating]);
-
-  
 
   // Récupérer les clusters sert
   useEffect(() => {
@@ -174,7 +162,6 @@ const Map = ({
     }, 500);
   };
 
- 
   // Afficher l'indicateur de chargement
   if (loading) {
     return (
@@ -183,7 +170,6 @@ const Map = ({
       </View>
     );
   }
-
 
   return (
     <View style={styles.container}>
@@ -201,8 +187,11 @@ const Map = ({
         moveOnMarkerPress={false}
         onMapReady={handleMapReady}
       >
+        {/* SUPPRIMÉ LE PREMIER ROUTEPOLYLINES ICI - C'ÉTAIT LE DOUBLON */}
+        
         {(isMapReady || !loading) && (
           <>
+            {/* Gardé uniquement cette instance de RoutePolylines */}
             {showRoute && (
               <RoutePolylines 
                 showRoutes={showRoutes}
@@ -216,14 +205,14 @@ const Map = ({
                 setRouteInfo={setRouteInfo}
                 isPreviewMode={isPreviewMode}
                 mapRef={mapRef}
-                
-                fitToCoordinates={fitToCoordinates} // ⚠️ Passez la fonction ici
+                fitToCoordinates={fitToCoordinates}
               />
             )}
 
             <LocationMarker 
               location={location} 
               heading={heading} 
+              
             />
 
             {clusters && clusters.map(cluster => (
@@ -252,7 +241,6 @@ const Map = ({
           </>
         )}
       </MapView>
-
 
       {!isNavigating && (
         <>
@@ -286,10 +274,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f0f0f0'
   },
-  
- 
-  
-  
+  topViewButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#3498db',
+    borderRadius: 24,
+    padding: 8,
+    elevation: 3,
+  },
+  followButton: {
+    top: 64,
+  }
 });
 
 export default Map;

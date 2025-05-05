@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Map from '../components/MapDisplay';
-import SearchBar from '../components/SearchBar';
+import SearchBar from '../components/SearchBar/SearchBar';
 import BlockInfo from '../components/BlockInfo';
 import FloatingMenu from '../components/FloatingMenu';
 import ReportMenu from '../components/ReportMenu';
@@ -172,6 +172,7 @@ export default function NavigationMainScreen() {
       )}
       
       <FloatingMenu 
+        style={styles.floatingMenuStyle} // Application du style personnalisé
         onTollPreferenceChange={handleTollPreferenceChange}
         avoidTolls={avoidTolls}
         onCameraLockToggle={isCameraLocked ? unlockCamera : lockCamera}
@@ -187,4 +188,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  // Ajout de ce style pour positionner FloatingMenu plus à droite
+  floatingMenuStyle: {
+    position: 'absolute',
+    top: '8%',
+    right: 20, // Position plus à droite
+    zIndex: 1000,
+  }
 });

@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 const LOCATION_CONFIG = {
   accuracy: Location.Accuracy.BestForNavigation,
   distanceInterval: 1,
-  timeInterval: 1000
+  timeInterval: 1
 };
 
 const REGION_DELTA = {
@@ -12,7 +12,7 @@ const REGION_DELTA = {
   longitude: 0.003
 };
 
-const SPEED_LIMIT_DELAY = 30000;
+const SPEED_LIMIT_DELAY = 3;
 
 export default function useLocation(mapRef) {
   const [location, setLocation] = useState(null);

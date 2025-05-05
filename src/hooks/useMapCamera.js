@@ -19,25 +19,23 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   const blockAutoUpdates = useRef(false);
   
   // Constantes optimisées pour une expérience style Waze
-  const MINIMUM_UPDATE_INTERVAL = 800;
+  const MINIMUM_UPDATE_INTERVAL = 200;
   const DIRECTION_THRESHOLD = 0.3;
-  const NAVIGATION_ALTITUDE = 30;
+  const NAVIGATION_ALTITUDE = 60;
   const NORMAL_ALTITUDE = 100;
   const PREVIEW_ALTITUDE = 1000;
-  const NAVIGATION_PITCH = 80;
-  const NORMAL_PITCH = 65;
+  const NAVIGATION_PITCH = 70;
+  const NORMAL_PITCH = 70;
   
-  // CORRECTION: Décalage vers l'AVANT en mode navigation (valeur positive)
-  // Ce qui placera la caméra derrière le point GPS
-  const OFFSET_DISTANCE = 40; // Décalage de 30 mètres dans la direction du regard
+  // CORRECTION: Décalage vers l'ARRIÈRE en mode navigation (valeur négative)
+  // Ce qui placera la caméra derrière la position GPS et regardant vers l'avant
+  const OFFSET_DISTANCE = 0; // Décalage de 40 mètres DERRIÈRE la position GPS
 
   // Amélioration de la fonction offsetCoordinates pour de grands décalages
   const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {
-    // Algorithme haversine plus précis pour les grands décalages
     const earthRadius = 6378137; // Rayon moyen de la Terre en mètres
     
-    // CORRECTION: Garder le même cap (ne pas inverser de 180°)
-    // Nous voulons décaler DANS la direction du regard
+    // Utiliser le heading directement pour calculer un décalage vers l'AVANT
     const headingRad = heading * Math.PI / 180;
     
     // Distance angulaire
@@ -123,16 +121,35 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     
     const headingToUse = currentHeading || 0;
     
-    return {
-      // En navigation, on place la caméra derrière le point GPS
-      center: navigating
-        ? offsetCoordinates(coords.latitude, coords.longitude, headingToUse, OFFSET_DISTANCE)
-        : { latitude: coords.latitude, longitude: coords.longitude },
-      pitch: navigating ? NAVIGATION_PITCH : NORMAL_PITCH,
-      heading: headingToUse,
-      altitude: navigating ? NAVIGATION_ALTITUDE : NORMAL_ALTITUDE,
-      zoom: navigating ? 18 : 17,
-    };
+    if (navigating) {
+      // En mode navigation: placer la caméra DERRIÈRE le point GPS
+      const offsetCoords = offsetCoordinates(
+        coords.latitude, 
+        coords.longitude, 
+        (headingToUse + 180) % 360, // Inverser la direction pour le placement
+        Math.abs(OFFSET_DISTANCE)
+      );
+      
+      return {
+        center: offsetCoords,
+        pitch: NAVIGATION_PITCH,
+        heading: headingToUse, // La caméra regarde dans le sens du déplacement
+        altitude: NAVIGATION_ALTITUDE,
+        zoom: 18
+      };
+    } else {
+      // En mode normal (non-navigation)
+      return {
+        center: { 
+          latitude: coords.latitude, 
+          longitude: coords.longitude 
+        },
+        pitch: NORMAL_PITCH,
+        heading: headingToUse,
+        altitude: NORMAL_ALTITUDE,
+        zoom: 17
+      };
+    }
   }, [offsetCoordinates]);
 
   // Autres fonctions existantes - inchangées
@@ -221,20 +238,21 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     const nextPoint = findNextPoint(location.coords, coordinates);
     const directionToUse = nextPoint ? getBearing(location.coords, nextPoint) : (calculatedHeading.current || heading || 0);
     
-    // CORRECTION: Utiliser le décalage DANS la direction du regard
+    // CORRECTION: Placer la caméra DERRIÈRE la position GPS avec OFFSET_DISTANCE négatif
     const offsetCenter = offsetCoordinates(
       location.coords.latitude, 
       location.coords.longitude, 
-      directionToUse, 
-      OFFSET_DISTANCE
+      // Rotation de 180° pour corriger la direction de la caméra
+      (directionToUse + 180) % 360,  // Orientée vers l'arrière pour le placement
+      Math.abs(OFFSET_DISTANCE)  // Utilise la valeur absolue pour la distance
     );
     
     const camera = {
       center: offsetCenter,
       pitch: NAVIGATION_PITCH,
-      heading: directionToUse,
+      heading: directionToUse,  // La caméra regarde vers l'AVANT (direction de déplacement)
       altitude: NAVIGATION_ALTITUDE,
-      zoom: 17.5
+      zoom: 18, // Légère augmentation du zoom pour une meilleure visibilité
     };
     
     animateCameraSafely(camera, { duration: 800 });
