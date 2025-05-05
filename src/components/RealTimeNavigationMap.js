@@ -30,10 +30,14 @@ const Map = ({
   routes,
   selectedRoute,
   onRouteSelect,
+  followsUserLocation,
+  // Supprimez cette prop pour éviter la collision avec l'état local
+  // loading
 }) => {
   // Gardez uniquement cette déclaration de l'état loading
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [mapConfig, setMapConfig] = useState(null);
   const [clusters, setClusters] = useState([]);
   const [nearbyCluster, setNearbyCluster] = useState(null);
   const [clusterDistance, setClusterDistance] = useState(null);
@@ -41,14 +45,55 @@ const Map = ({
   const [notifiedClusters] = useState(new Set());
   
   const { 
+    isCameraLocked,
     isPreviewMode,
+    unlockCamera,
+    lockCamera,
+    NAVIGATION_ALTITUDE,
+    PREVIEW_ALTITUDE,
+    NORMAL_ALTITUDE,
     forceInitialLowView,
-    fitToCoordinates // ⚠️ Important: extraire cette fonction ici
+    fitToCoordinates,
+    temporarilyDisableTracking
   } = useMapCamera(mapRef, location, heading, isNavigating, { 
     destination, 
     coordinates: activeRoute?.coordinates 
   });
 
+  // Supprimer ou mettre en commentaire ce second useMapCamera qui cause des conflits
+  // const { 
+  //   setCameraMode // Extraire cette fonction
+  // } = useMapCamera(mapRef, location, heading, isNavigating, { 
+  //   destination, 
+  //   coordinates: activeRoute?.coordinates 
+  // });
+
+  // Vous pouvez définir une fonction locale pour remplacer setCameraMode
+  const handleViewMode = (mode) => {
+    console.log(`Mode vue: ${mode}`);
+    // Implémentation simplifiée selon le mode
+    if (mode === 'overhead' && mapRef?.current && location?.coords) {
+      mapRef.current.animateCamera({
+        center: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        pitch: 0, // Vue du dessus
+        altitude: NORMAL_ALTITUDE * 1.5,
+        zoom: 17
+      }, { duration: 500 });
+    } else if (mode === 'follow' && mapRef?.current && location?.coords) {
+      mapRef.current.animateCamera({
+        center: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        pitch: 45,
+        altitude: NORMAL_ALTITUDE,
+        zoom: 17
+      }, { duration: 500 });
+    }
+  };
 
   // Ajouter au début du composant:
   useEffect(() => {
@@ -58,6 +103,29 @@ const Map = ({
     };
   }, [isNavigating]);
 
+  // Charger la configuration de la carte
+  useEffect(() => {
+    const getMapConfig = async () => {
+      try {
+        const { data } = await axios.get(`${API_URL}/api/map/config`);
+        setMapConfig(data);
+      } catch (error) {
+        console.error('Error loading map config:', error);
+        setMapConfig({
+          initialRegion: {
+            latitude: 48.8584,
+            longitude: 2.2945,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1
+          }
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getMapConfig();
+  }, []);
 
   // Récupérer les clusters
   useEffect(() => {
@@ -157,11 +225,11 @@ const Map = ({
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         showsUserLocation={false}
         followsUserLocation={false}  // ✅ Correct pour votre cas d'usage
-        showsCompass={true}
-        rotateEnabled={!isNavigating}
-        pitchEnabled={true}
-        scrollEnabled={!isNavigating}
-        zoomEnabled={!isNavigating}
+        showsCompass={!isNavigating} // Masquer la boussole en navigation
+        rotateEnabled={!isNavigating} // Désactiver la rotation manuelle en navigation
+        pitchEnabled={!isNavigating} // Désactiver l'inclinaison manuelle en navigation
+        scrollEnabled={!isNavigating} // Désactiver le défilement manuel en navigation
+        zoomEnabled={!isNavigating} // Désactiver le zoom manuel en navigation
         moveOnMarkerPress={false}
         onMapReady={handleMapReady}
       >

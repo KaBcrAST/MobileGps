@@ -1,9 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Polyline } from 'react-native-maps';
-import MapViewDirections from 'react-native-maps-directions';
 import useMapCamera from '../../hooks/useMapCamera';
-
-const API_KEY = "AIzaSyBtLW4mbOZNMU5GZyF502KnybtvteVAwlc";
 
 const RoutePolylines = ({ 
   showRoutes,
@@ -15,24 +12,19 @@ const RoutePolylines = ({
   location,
   mapRef,
   fitToCoordinates,
-  destination,
-  setRouteInfo,
-  isPreviewMode
 }) => {
-  // Référence pour stocker les coordonnées ajustées
   const adjustedCoordinates = useRef(null);
   const [currentSegment, setCurrentSegment] = useState([]);
   const [remainingSegment, setRemainingSegment] = useState([]);
+  const previousUserPosition = useRef(null);
   
-  // Fonction pour ajuster chaque point pour améliorer la précision
+  // Fonction améliorée pour ajuster les coordonnées
   const adjustCoordinates = (coordinates) => {
     if (!coordinates || coordinates.length === 0) return [];
     
-    // Facteur de correction - ajustez cette valeur selon les tests sur le terrain
-    // Une valeur positive déplace les points vers l'est/nord
-    // Une valeur négative déplace les points vers l'ouest/sud
-    const latitudeOffset = -0.00005; // Environ 5m au sud
-    const longitudeOffset = 0; // Pas de correction est/ouest par défaut
+    // Facteur de correction plus précis
+    const latitudeOffset = 0; // Aucun décalage par défaut
+    const longitudeOffset = 0;
     
     return coordinates.map(coord => ({
       latitude: coord.latitude + latitudeOffset,
@@ -40,7 +32,7 @@ const RoutePolylines = ({
     }));
   };
 
-  // Ajuster les coordonnées lorsque activeRoute change
+  // Ajuster les coordonnées quand activeRoute change
   useEffect(() => {
     if (activeRoute?.coordinates && activeRoute.coordinates.length > 0) {
       adjustedCoordinates.current = adjustCoordinates(activeRoute.coordinates);
@@ -49,7 +41,7 @@ const RoutePolylines = ({
     }
   }, [activeRoute]);
 
-  // Mettre à jour les segments actuels et restants pour le mode navigation
+  // Mise à jour dynamique des segments actuels et restants
   useEffect(() => {
     if (!isNavigating || !location?.coords || !adjustedCoordinates.current) {
       setCurrentSegment([]);
@@ -78,18 +70,30 @@ const RoutePolylines = ({
       }
     }
 
-    // Si on est proche d'un point, inclure ce point pour une transition plus fluide
-    const segmentStart = Math.max(0, closestPointIndex - 1);
+    // Ajuster le segment actuel en fonction de la position réelle de l'utilisateur
+    const userPosition = { 
+      latitude: location.coords.latitude, 
+      longitude: location.coords.longitude 
+    };
+
+    // ✨ AMÉLIORATION: Créer un tableau de positions dynamique pour le segment actuel
+    let actualCurrentSegment = [];
     
-    // Segment actuel: de la position actuelle jusqu'au point le plus proche
-    // + quelques points supplémentaires pour une transition fluide
+    // Ajouter les dernières positions connues de l'utilisateur au segment actuel
+    if (previousUserPosition.current) {
+      actualCurrentSegment = [previousUserPosition.current];
+    }
+    
+    // Ajouter la position actuelle
+    actualCurrentSegment.push(userPosition);
+
+    // Mettre à jour la position précédente
+    previousUserPosition.current = userPosition;
+    
+    // Segment actuel: positions de l'utilisateur + quelques points du tracé devant
     setCurrentSegment([
-      // Commencer par la position exacte de l'utilisateur pour éviter un "saut"
-      { 
-        latitude: location.coords.latitude, 
-        longitude: location.coords.longitude 
-      },
-      ...coords.slice(segmentStart, closestPointIndex + 1)
+      ...actualCurrentSegment,
+      ...coords.slice(Math.max(0, closestPointIndex - 1), closestPointIndex + 2)
     ]);
 
     // Segment restant: du point le plus proche jusqu'à la fin
@@ -111,27 +115,7 @@ const RoutePolylines = ({
     return R * c; // Distance en mètres
   };
 
-  // Ajoutez cette vérification dans votre composant RoutePolylines
-  const handleFitToCoordinates = (coords) => {
-    if (fitToCoordinates && Array.isArray(coords) && coords.length > 1) {
-      fitToCoordinates(coords);
-    } else if (!fitToCoordinates) {
-      // Alternative si fitToCoordinates n'est pas disponible
-      console.warn("⚠️ fitToCoordinates n'est pas disponible, utilisation de l'alternative");
-      if (mapRef?.current && Array.isArray(coords) && coords.length > 1) {
-        try {
-          mapRef.current.fitToCoordinates(coords, {
-            edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
-            animated: true
-          });
-        } catch (error) {
-          console.error("❌ Erreur lors de l'ajustement de vue alternatif:", error);
-        }
-      }
-    }
-  };
-
-  // Rendu des itinéraires en mode sélection
+  // Rendu des itinéraires en mode sélection ou navigation
   if (showRoutes && routes && routes.length > 0) {
     return routes.map((route, index) => (
       <Polyline
@@ -148,7 +132,7 @@ const RoutePolylines = ({
     ));
   }
 
-  // Rendu de l'itinéraire actif en mode navigation
+  // Rendu de l'itinéraire actif en mode navigation avec segmentation
   if (isNavigating && activeRoute) {
     return (
       <>
@@ -179,7 +163,6 @@ const RoutePolylines = ({
     );
   }
 
-  // Si aucun itinéraire n'est à afficher
   return null;
 };
 

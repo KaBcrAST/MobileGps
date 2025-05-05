@@ -2,20 +2,20 @@ import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
 import { Marker } from 'react-native-maps';
 
-const LocationMarker = ({ location, heading, mapRef }) => {
+const LocationMarker = ({ location, heading }) => {
   if (!location) return null;
 
   return (
     <Marker 
       coordinate={location.coords} 
-      flat 
       anchor={{ x: 0.5, y: 0.5 }}
-      rotation={heading}
+      rotation={heading || 0}
       zIndex={1000}
       tracksViewChanges={false}
+      flat={true} // Assurez-vous que ce paramètre est true pour que la rotation fonctionne
     >
       <Image 
-        source={require('../../../assets/navigation.png')} // Assurez-vous d'avoir cette image
+        source={require('../../../assets/navigation.png')} 
         style={styles.arrowImage} 
       />
     </Marker>

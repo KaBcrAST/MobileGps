@@ -27,16 +27,18 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   const NAVIGATION_PITCH = 80;
   const NORMAL_PITCH = 65;
   
-  // SUPPRIMÉ: const VERTICAL_OFFSET = -0.0003;
-  // AJOUTÉ: Distance de décalage pour style Waze en mètres
-  const OFFSET_DISTANCE = -30; // 100 mètres de décalage
+  // CORRECTION: Décalage vers l'AVANT en mode navigation (valeur positive)
+  // Ce qui placera la caméra derrière le point GPS
+  const OFFSET_DISTANCE = 30; // Décalage de 30 mètres dans la direction du regard
 
   // Amélioration de la fonction offsetCoordinates pour de grands décalages
   const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {
     // Algorithme haversine plus précis pour les grands décalages
     const earthRadius = 6378137; // Rayon moyen de la Terre en mètres
-    const offsetHeading = (heading + 180) % 360; // Direction opposée
-    const headingRad = offsetHeading * Math.PI / 180;
+    
+    // CORRECTION: Garder le même cap (ne pas inverser de 180°)
+    // Nous voulons décaler DANS la direction du regard
+    const headingRad = heading * Math.PI / 180;
     
     // Distance angulaire
     const angularDistance = distanceInMeters / earthRadius;
@@ -115,14 +117,14 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     }
   }, [mapRef]);
 
-  // MODIFIÉ: Configuration de caméra avec décalage dynamique style Waze
+  // MODIFIÉ: Configuration de caméra avec décalage correct
   const getCameraConfig = useCallback((coords, navigating, currentHeading) => {
     if (!coords) return null;
     
     const headingToUse = currentHeading || 0;
     
     return {
-      // MODIFIÉ: Utiliser offsetCoordinates pour un décalage directionnel
+      // En navigation, on place la caméra derrière le point GPS
       center: navigating
         ? offsetCoordinates(coords.latitude, coords.longitude, headingToUse, OFFSET_DISTANCE)
         : { latitude: coords.latitude, longitude: coords.longitude },
@@ -203,7 +205,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     previousPosition.current = currentPosition;
   }, [location?.coords?.latitude, location?.coords?.longitude, heading, isCameraLocked, getDistance, getBearing]);
 
-  // MODIFIÉ: Effet principal pour le mode navigation avec UI type Waze
+  // MODIFIÉ: Effet principal pour le mode navigation
   useEffect(() => {
     if (!isNavigating || !mapRef?.current || !location?.coords || !isCameraLocked || blockAutoUpdates.current) {
       return;
@@ -219,7 +221,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     const nextPoint = findNextPoint(location.coords, coordinates);
     const directionToUse = nextPoint ? getBearing(location.coords, nextPoint) : (calculatedHeading.current || heading || 0);
     
-    // Utiliser le décalage augmenté pour placer le point GPS très bas sur l'écran
+    // CORRECTION: Utiliser le décalage DANS la direction du regard
     const offsetCenter = offsetCoordinates(
       location.coords.latitude, 
       location.coords.longitude, 
@@ -232,7 +234,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
       pitch: NAVIGATION_PITCH,
       heading: directionToUse,
       altitude: NAVIGATION_ALTITUDE,
-      zoom: 17.5 // Légèrement augmenté pour compenser
+      zoom: 17.5
     };
     
     animateCameraSafely(camera, { duration: 800 });
