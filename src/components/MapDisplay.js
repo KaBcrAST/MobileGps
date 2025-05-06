@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Platform, ActivityIndicator, View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Platform, ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Ionicons } from '@expo/vector-icons';
 import { mapStyles } from '../styles/globalStyles';
 import {
   getClusterIcon,
@@ -15,6 +16,8 @@ import RoutePolylines from './routes/RoutePolylines';
 import LocationMarker from './markers/LocationMarker';
 import { API_URL } from '../config/config';
 import useMapCamera from '../hooks/useMapCamera';
+import FloatingMenu from './FloatingMenu'; // Nous gardons uniquement cette importation
+import RoutePreview from './RoutePreview/RoutePreview';
 
 //normal display sans navigation
 const Map = ({ 
@@ -29,8 +32,13 @@ const Map = ({
   routes,
   selectedRoute,
   onRouteSelect,
+  onStartNavigation, 
 }) => {
-  // Gardez uniquement cette déclaration de l'état loading
+  // Supprimez l'état qrScannerVisible
+  const [showRoutePreview, setShowRoutePreview] = useState(false);
+  const [customDestination, setDestination] = useState(null);
+  const [avoidTolls, setAvoidTolls] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [clusters, setClusters] = useState([]);
@@ -42,12 +50,32 @@ const Map = ({
   const { 
     isPreviewMode,
     forceInitialLowView,
-    fitToCoordinates // ⚠️ Important: extraire cette fonction ici
+    fitToCoordinates
   } = useMapCamera(mapRef, location, heading, isNavigating, { 
     destination, 
     coordinates: activeRoute?.coordinates 
   });
 
+  // Fonction pour gérer les coordonnées obtenues depuis le QR code
+  const handleQRScanned = (scannedLocation) => {
+    console.log("Coordonnées scannées:", scannedLocation);
+    
+    if (scannedLocation && scannedLocation.latitude && scannedLocation.longitude) {
+      // Définir la destination
+      setDestination({
+        latitude: scannedLocation.latitude,
+        longitude: scannedLocation.longitude,
+        name: scannedLocation.name || "Destination QR",
+        address: scannedLocation.address || scannedLocation.name || `Coordonnées GPS: ${scannedLocation.latitude}, ${scannedLocation.longitude}`
+      });
+      
+      // Afficher la prévisualisation de route
+      setShowRoutePreview(true);
+    } else {
+      console.error("Format de coordonnées invalide ou incomplet");
+      Alert.alert("Erreur", "Les coordonnées scannées sont invalides ou incomplètes");
+    }
+  };
 
   // Ajouter au début du composant:
   useEffect(() => {
@@ -57,7 +85,24 @@ const Map = ({
     };
   }, [isNavigating]);
 
-
+  // Gérer la sélection d'itinéraire dans la prévisualisation
+  const handlePreviewRouteSelect = useCallback((route) => {
+    if (onRouteSelect) {
+      onRouteSelect(route);
+    }
+  }, [onRouteSelect]);
+  
+  // Gérer le démarrage de la navigation depuis la prévisualisation
+  const handleStartNavigationFromPreview = useCallback((routeInfo) => {
+    setShowRoutePreview(false); // Fermer la prévisualisation
+    
+    if (onStartNavigation) {
+      onStartNavigation(routeInfo);
+    } else {
+      console.warn("Fonction onStartNavigation non définie. Navigation impossible.");
+    }
+  }, [onStartNavigation]);
+  
   // Récupérer les clusters
   useEffect(() => {
     const fetchClusters = async () => {
@@ -134,6 +179,32 @@ const Map = ({
       // mapRef.current.animateCamera({...});
     }
   }, [location]);
+
+  // Fonctions pour le mode de vue
+  const handleViewMode = (mode) => {
+    if (mode === 'overhead' && mapRef.current && location?.coords) {
+      mapRef.current.animateCamera({
+        center: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        pitch: 0,
+        heading: 0,
+        altitude: 1000,
+        zoom: 15,
+      });
+    } else if (mode === 'follow' && mapRef.current && location?.coords) {
+      mapRef.current.animateCamera({
+        center: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        pitch: 60,
+        heading: heading || 0,
+        zoom: 18,
+      });
+    }
+  };
 
   // Afficher l'indicateur de chargement
   if (loading) {
@@ -223,6 +294,17 @@ const Map = ({
         setClusterDistance={setClusterDistance}
       />
 
+      {/* FloatingMenu avec la fonction QR Scanner */}
+      {!isNavigating && (
+        <FloatingMenu 
+          onTollPreferenceChange={setAvoidTolls}
+          avoidTolls={avoidTolls}
+          onQRScanned={handleQRScanned} // Passez la fonction de traitement QR ici
+          onReinitializeCamera={forceInitialLowView}
+        />
+      )}
+
+      {/* Boutons de vue (si vous souhaitez les conserver) */}
       {!isNavigating && (
         <>
           <TouchableOpacity 
@@ -238,7 +320,22 @@ const Map = ({
           >
             <Icon name="compass" size={24} color="#fff" />
           </TouchableOpacity>
+
+          {/* Supprimez le bouton QR Scanner ici */}
         </>
+      )}
+
+      {/* Supprimez le composant QRScanner ici */}
+
+      {/* Prévisualisation de route (modal ou overlay) */}
+      {showRoutePreview && customDestination && (
+        <RoutePreview
+          origin={location}
+          destination={customDestination}
+          onRouteSelect={handlePreviewRouteSelect}
+          onStartNavigation={handleStartNavigationFromPreview}
+          avoidTolls={avoidTolls}
+        />
       )}
     </View>
   );
@@ -282,8 +379,12 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   followButton: {
-    bottom: 80, // Positionnez ce bouton au-dessus du premier
-    backgroundColor: '#27ae60' // Une couleur différente pour distinguer
+    bottom: 80, // Au-dessus du premier bouton
+    backgroundColor: '#27ae60',
+  },
+  qrButton: {
+    bottom: 140, // Au-dessus des deux autres boutons
+    backgroundColor: '#9b59b6', // Couleur violette pour le distinguer
   }
 });
 

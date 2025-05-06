@@ -15,6 +15,8 @@
     "axios": "^1.9.0",
     "crypto-js": "^4.2.0",
     "expo": "~53.0.7",
+    "expo-barcode-scanner": "^13.0.1",
+    "expo-camera": "~16.1.6",
     "expo-location": "~18.1.4",
     "expo-status-bar": "~2.2.3",
     "expo-web-browser": "~14.1.6",
@@ -23,7 +25,10 @@
     "react-native-maps": "1.20.1",
     "react-native-maps-directions": "^1.9.0",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.10.0"
+    "react-native-screens": "~4.10.0",
+    "expo-image-picker": "~16.1.4",
+    "expo-image-manipulator": "~13.1.5",
+    "expo-file-system": "~18.1.9"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

@@ -38,9 +38,8 @@ const useNavigationLogic = (location, mapRef) => {
     try {
       const response = await axios.get(`${API_URL}`, { //verifier
         params: {
-          origin: `${location.coords.latitude},${location.coords.longitude}`,
-          destination: `${destination.latitude},${destination.longitude}`,
-          avoidTolls
+          origin: ``,
+          destination: ``,
         }
       });
       
