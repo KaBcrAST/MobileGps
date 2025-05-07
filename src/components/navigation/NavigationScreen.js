@@ -1,12 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Text } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Map from '../RealTimeNavigationMap';
 import SpeedLimitSign from '../SpeedLimitSign';
 import BlockInfo from '../BlockInfo';
 import NavigationInstruction from './NavigationInstruction';
-//pt
+import ArrivalNotification from './ArrivalNotification';
+
+const ARRIVAL_THRESHOLD = 50; // Distance en mètres considérée comme "arrivée"
+
 const NavigationScreen = ({
   mapRef,
   location,
@@ -18,12 +20,61 @@ const NavigationScreen = ({
   routeInfo,
   onEndNavigation
 }) => {
+  const [showArrival, setShowArrival] = useState(false);
+  const [hasShownArrival, setHasShownArrival] = useState(false);
+
+  // Vérifier si l'utilisateur est arrivé à destination
+  useEffect(() => {
+    if (!location?.coords || !destination || hasShownArrival) return;
+
+    // Calculer la distance entre la position actuelle et la destination
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3; // Rayon de la terre en mètres
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+              
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // Distance en mètres
+    };
+
+    const distance = calculateDistance(
+      location.coords.latitude,
+      location.coords.longitude,
+      destination.latitude,
+      destination.longitude
+    );
+
+    // Si la distance est inférieure au seuil, considérer que l'utilisateur est arrivé
+    if (distance <= ARRIVAL_THRESHOLD) {
+      setShowArrival(true);
+      setHasShownArrival(true);
+    }
+  }, [location, destination, hasShownArrival]);
+
+  // Mise à jour de la caméra
   useEffect(() => {
     // Cherchez ici des mises à jour de caméra basées sur la position
     if (mapRef?.current && location?.coords) {
       // ...
     }
   }, [location]);
+
+  // Gérer la redirection vers l'écran d'accueil
+  const handleReturnToHome = () => {
+    setShowArrival(false);
+    onEndNavigation();
+  };
+
+  // Gérer la fermeture de la notification sans quitter la navigation
+  const handleCloseNotification = () => {
+    setShowArrival(false);
+  };
 
   return (
     <View style={styles.container}>
@@ -49,18 +100,10 @@ const NavigationScreen = ({
           isNavigating={true}
           routeInfo={routeInfo}
           activeRoute={activeRoute}
+          onEndNavigation={onEndNavigation}
         />
         <SpeedLimitSign location={location} />
       </View>
-
-      {/* Bouton Terminer */}
-      <TouchableOpacity 
-        style={styles.endButton}
-        onPress={onEndNavigation}
-      >
-        <Icon name="close" size={24} color="white" />
-        <Text style={styles.buttonText}>Terminer</Text>
-      </TouchableOpacity>
 
       {/* Infos de trafic */}
       {activeRoute?.traffic?.hasSlowdowns && (
@@ -71,6 +114,14 @@ const NavigationScreen = ({
           </Text>
         </View>
       )}
+
+      {/* Notification d'arrivée */}
+      <ArrivalNotification 
+        visible={showArrival}
+        destinationName={destination?.name || "Destination"}
+        onClose={handleCloseNotification}
+        onReturnToHomeScreen={handleReturnToHome}
+      />
     </View>
   );
 };
@@ -79,27 +130,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  
-  endButton: {
+  infoContainer: {
     position: 'absolute',
-    bottom: 20,
-    alignSelf: 'center',
-    backgroundColor: '#ff4444',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  buttonText: {
-    color: 'white',
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   trafficAlertContainer: {
     position: 'absolute',

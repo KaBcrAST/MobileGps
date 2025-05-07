@@ -35,7 +35,7 @@ const SpeedLimitSign = ({ location }) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 120,
+    bottom: 280, // Augmenté de 120 à 140 pour monter le panneau
     left: 20,
     zIndex: 1000,
   },
