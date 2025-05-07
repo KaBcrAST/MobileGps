@@ -50,6 +50,7 @@ export default function NavigationMainScreen() {
   const [selectedRoute, setSelectedRoute] = useState(0);
   const [qrScannerVisible, setQRScannerVisible] = useState(false);
   const [loading, setLoading] = useState(false); // Ajout de l'état loading
+  const [searchQuery, setSearchQuery] = useState(''); // Ajout de searchQuery state
   
   // Fonction de sélection de route
   const onRouteSelect = (route) => {
@@ -272,6 +273,7 @@ const handleQRScanned = async (scannedLocation) => {
             visible={qrScannerVisible}
             onClose={() => setQRScannerVisible(false)}
             onQRScanned={handleQRScanned}
+            setSearchQuery={setSearchQuery} // Ajout de setSearchQuery
           />
           
           {showRoutes && (
@@ -293,7 +295,12 @@ const handleQRScanned = async (scannedLocation) => {
             />
           )}
           
-          <SearchBar onPlaceSelect={handlePlaceSelect} />
+          <SearchBar 
+            value={searchQuery} 
+            onChangeText={setSearchQuery} 
+            onClear={() => setSearchQuery('')}
+            onPlaceSelect={handlePlaceSelect} 
+          />
           <BlockInfo 
             speed={speed}
             isNavigating={false}

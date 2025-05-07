@@ -89,8 +89,14 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
           onChangeText={handleSearch}
           onFocus={() => toggleSearchPosition(true)}
           onClear={() => {
-            setSearchQuery('');
-            setPredictions([]);
+            if (typeof setSearchQuery === 'function') {
+              setSearchQuery('');  // Assurez-vous que setSearchQuery est défini
+              setPredictions([]);  // Et setPredictions aussi
+            } else {
+              console.warn("setSearchQuery n'est pas une fonction");
+              // Fallback: essayer d'utiliser handleSearch directement
+              handleSearch('');
+            }
           }}
         />
       </Animated.View>

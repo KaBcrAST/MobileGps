@@ -20,7 +20,6 @@ export const startDirectNavigation = async (currentLocation, destination, avoidT
     }
     
     // Utiliser l'API de prévisualisation pour obtenir un itinéraire
-    // Cette approche garantit que nous utilisons le même format de données que la prévisualisation
     const response = await axios.get(`${API_URL}/api/navigation/preview`, {
       params: {
         origin: `${currentLocation.latitude},${currentLocation.longitude}`,
@@ -33,11 +32,30 @@ export const startDirectNavigation = async (currentLocation, destination, avoidT
     if (response.data && response.data.routes && response.data.routes.length > 0) {
       console.log("Itinéraire direct reçu avec succès");
       // Nous prenons le premier itinéraire suggéré
+      const route = response.data.routes[0];
+      
+      // Extraire les informations de trafic si disponibles
+      let trafficInfo = {
+        hasSlowdowns: false,
+        slowdownDuration: { value: 0, text: '0 min' }
+      };
+      
+      if (route.traffic && route.traffic.hasSlowdowns) {
+        trafficInfo = {
+          hasSlowdowns: route.traffic.hasSlowdowns,
+          slowdownDuration: route.traffic.slowdownDuration || { value: 0, text: '0 min' },
+          durationWithTraffic: route.durationWithTraffic || route.duration
+        };
+        
+        console.log("Informations de trafic détectées:", trafficInfo);
+      }
+      
       return {
-        ...response.data.routes[0],
+        ...route,
         origin: currentLocation,
         destination: destination,
-        avoidTolls: avoidTolls
+        avoidTolls: avoidTolls,
+        traffic: trafficInfo
       };
     } else {
       console.warn("Réponse de l'API invalide:", response.data);
@@ -45,8 +63,6 @@ export const startDirectNavigation = async (currentLocation, destination, avoidT
     }
   } catch (error) {
     console.error('Erreur lors du démarrage de la navigation directe:', error);
-    // Nous ne créons pas d'itinéraire de secours car cela pourrait être dangereux
-    // Mieux vaut échouer clairement et demander à l'utilisateur d'essayer à nouveau
     throw error;
   }
 };

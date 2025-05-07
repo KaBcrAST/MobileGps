@@ -9,6 +9,18 @@ const SearchInput = ({
   onFocus, 
   onClear 
 }) => {
+  // Ajoutons une fonction sécurisée pour gérer le nettoyage du texte
+  const handleClear = () => {
+    if (typeof onClear === 'function') {
+      onClear();
+    } else if (typeof onChangeText === 'function') {
+      // Fallback au cas où onClear n'est pas défini
+      onChangeText('');
+    } else {
+      console.warn("Ni onClear ni onChangeText ne sont des fonctions valides");
+    }
+  };
+
   return (
     <View style={styles.searchInputContainer}>
       <Icon name="search" size={24} color="#666" style={styles.searchIcon} />
@@ -24,7 +36,7 @@ const SearchInput = ({
       />
       {searchQuery.length > 0 && (
         <TouchableOpacity 
-          onPress={onClear}
+          onPress={handleClear}
           style={styles.clearButton}
         >
           <Icon name="clear" size={20} color="#666" />

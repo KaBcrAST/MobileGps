@@ -255,6 +255,7 @@ export default function useSearchBarLogic(onPlaceSelect) {
     isSearchFocused,
     searchQuery,
     predictions,
+    setPredictions, // Assurez-vous que setPredictions est inclus
     animatedPosition,
     bottomMenuPosition,
     inputRef,
@@ -279,6 +280,8 @@ export default function useSearchBarLogic(onPlaceSelect) {
     saveAddress,
     closeSearchAndMenu,
     setModalVisible,
+    setEditTitle,
+    setSearchQuery, // Assurez-vous que setSearchQuery est exporté ici
     handleLayoutChange
   };
 }

@@ -4,7 +4,8 @@ import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
 import axios from 'axios';
 import { API_URL } from '../../config/config';
 import useMapCamera from '../../hooks/useMapCamera';
-//pt
+import { Ionicons } from '@expo/vector-icons'; // Assurez-vous d'avoir cette dépendance
+
 const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, avoidTolls }) => {
   const mapRef = useRef(null);
   const [routes, setRoutes] = useState([]);
@@ -90,6 +91,29 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
     return distance;
   };
 
+  // Fonction pour récupérer la durée du trajet avec trafic
+  const getTrafficDuration = (route) => {
+    if (route.durationWithTraffic) {
+      return route.durationWithTraffic.text;
+    } else if (route.traffic && route.traffic.durationWithTraffic) {
+      return route.traffic.durationWithTraffic.text;
+    }
+    return formatDuration(route.duration);
+  };
+
+  // Fonction pour déterminer si la route a des ralentissements
+  const hasTrafficSlowdowns = (route) => {
+    return route.traffic && route.traffic.hasSlowdowns;
+  };
+
+  // Fonction pour récupérer la durée des ralentissements
+  const getSlowdownDuration = (route) => {
+    if (route.traffic && route.traffic.slowdownDuration) {
+      return route.traffic.slowdownDuration.text;
+    }
+    return null;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <MapView
@@ -127,6 +151,9 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
         >
           {routes.map((route, index) => {
             const isSelected = index === selectedRouteIndex;
+            const hasSlowdowns = hasTrafficSlowdowns(route);
+            const slowdownDuration = getSlowdownDuration(route);
+            
             return (
               <TouchableOpacity
                 key={index}
@@ -136,15 +163,34 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
                 <View style={styles.routeCardContent}>
                   <View style={styles.routeMainInfo}>
                     <Text style={[styles.routeTime, isSelected && styles.selectedRouteText]}>
-                      {formatDuration(route.duration)}
+                      {getTrafficDuration(route)}
                     </Text>
                     <Text style={[styles.routeDistance, isSelected && styles.selectedRouteText]}>
                       {formatDistance(route.distance)}
                     </Text>
                   </View>
+                  
+                  {/* Affichage des ralentissements */}
+                  {hasSlowdowns && (
+                    <View style={styles.trafficInfoContainer}>
+                      <Ionicons name="alert-circle" size={16} color="#FF8800" />
+                      <Text style={styles.trafficInfoText}>
+                        +{slowdownDuration} de bouchons
+                      </Text>
+                    </View>
+                  )}
+                  
                   <Text style={[styles.routeVia, isSelected && styles.selectedRouteText]}>
-                    {index === 0 ? 'Route principale' : 'Alternative'}
+                    {route.summary || (index === 0 ? 'Route principale' : 'Alternative')}
                   </Text>
+                  
+                  {/* Indicateur de péage si applicable */}
+                  {route.hasTolls && (
+                    <View style={styles.tollsContainer}>
+                      <Ionicons name="cash-outline" size={16} color="#6B7280" />
+                      <Text style={styles.tollsText}>Péages sur cet itinéraire</Text>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -189,7 +235,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     marginHorizontal: 6,
-    minWidth: 150,
+    minWidth: 180, // Augmenté pour adapter plus d'informations
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -242,6 +288,32 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  // Nouveaux styles pour les infos de trafic
+  trafficInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
+    backgroundColor: '#FFF8E0',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  trafficInfoText: {
+    color: '#FF8800',
+    fontSize: 14,
+    marginLeft: 4,
+    fontWeight: '500',
+  },
+  tollsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  tollsText: {
+    color: '#6B7280',
+    fontSize: 14,
+    marginLeft: 4,
   },
 });
 
