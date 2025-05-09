@@ -1,9 +1,6 @@
 import * as Location from 'expo-location';
 import axios from 'axios';
 
-/**
- * Obtient la position actuelle de l'utilisateur
- */
 export const getCurrentLocation = async () => {
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -23,13 +20,9 @@ export const getCurrentLocation = async () => {
   }
 };
 
-/**
- * Géocode une adresse (texte) en coordonnées GPS
- */
 export const geocodeAddress = async (address) => {
   try {
     console.log("Géocodage de l'adresse:", address);
-    // Utilisation de l'API Nominatim d'OpenStreetMap (gratuite)
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
       params: {
         q: address,

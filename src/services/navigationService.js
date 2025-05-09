@@ -2,24 +2,18 @@ import axios from 'axios';
 import { API_URL } from '../config/config';
 
 /**
- * Lance directement la navigation sans prévisualisation en utilisant l'API de routes
- * @param {Object} currentLocation - Coordonnées de l'utilisateur {latitude, longitude}
- * @param {Object} destination - Destination {latitude, longitude, name, address}
- * @param {Boolean} avoidTolls - Indique si les péages doivent être évités
- * @returns {Promise} Promesse contenant l'itinéraire direct pour la navigation
+ * @param {Object} currentLocation 
+ * @param {Object} destination
+ * @param {Boolean} avoidTolls 
+ * @returns {Promise}
  */
 export const startDirectNavigation = async (currentLocation, destination, avoidTolls = false) => {
   try {
-    console.log("Démarrage navigation directe:", {
-      origin: currentLocation,
-      destination: destination
-    });
     
     if (!currentLocation || !currentLocation.latitude) {
       throw new Error('Position actuelle non disponible');
     }
     
-    // Utiliser l'API de prévisualisation pour obtenir un itinéraire
     const response = await axios.get(`${API_URL}/api/navigation/preview`, {
       params: {
         origin: `${currentLocation.latitude},${currentLocation.longitude}`,
