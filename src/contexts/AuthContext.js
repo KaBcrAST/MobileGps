@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/config'; // Importer l'URL depuis config
 
 const AuthContext = createContext();
 
@@ -29,7 +30,7 @@ export const AuthProvider = ({ children }) => {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      // Silent fail - user will need to login again
+      console.error('Erreur lors du chargement des données d\'authentification:', error);
     } finally {
       setLoading(false);
     }
@@ -38,7 +39,8 @@ export const AuthProvider = ({ children }) => {
   const login = async (data) => {
     try {
       if (data.user && !data.user._id) {
-        const response = await fetch('https://react-gpsapi.vercel.app/auth/me', {
+        // Utiliser API_URL depuis config.js au lieu de l'URL codée en dur
+        const response = await fetch(`${API_URL}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${data.token}`
           }
@@ -57,7 +59,8 @@ export const AuthProvider = ({ children }) => {
       
       setUser(data.user);
       setToken(data.token);
-    } catch {
+    } catch (error) {
+      console.error('Erreur de connexion:', error);
       throw new Error('Échec de la connexion');
     }
   };
@@ -70,7 +73,8 @@ export const AuthProvider = ({ children }) => {
       ]);
       setToken(null);
       setUser(null);
-    } catch {
+    } catch (error) {
+      console.error('Erreur de déconnexion:', error);
       throw new Error('Échec de la déconnexion');
     }
   };

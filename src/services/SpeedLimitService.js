@@ -1,9 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../config/config';
 
-
-
-// Export the decode polyline utility
 export const decodePolyline = (encoded) => {
   if (!encoded) return [];
   
@@ -50,9 +47,6 @@ export const decodePolyline = (encoded) => {
 
 export const navigationService = {
   decodePolyline,
-
-
-
   async getSpeedLimit(location, retries = 2) {
     if (!location?.coords?.latitude || !location?.coords?.longitude) {
       console.error('Invalid location data');
@@ -65,11 +59,6 @@ export const navigationService = {
       longitude: Number(longitude).toFixed(6)
     };
 
-    console.log('📍 Fetching speed limit for:', {
-      ...formattedCoords,
-      accuracy,
-      speed: location.coords.speed
-    });
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
@@ -79,13 +68,12 @@ export const navigationService = {
             longitude: formattedCoords.longitude,
             accuracy
           },
-          timeout: 5000, // Reduced timeout
+          timeout: 5000, 
           headers: {
             'Accept': 'application/json'
           }
         });
 
-        console.log('✅ Speed limit response:', response.data);
         return response.data.speedLimit;
 
       } catch (error) {
@@ -98,28 +86,14 @@ export const navigationService = {
         });
 
         if (isLastAttempt) {
-          console.error('❌ All speed limit attempts failed');
           return null;
         }
 
-        // Wait before retry (exponential backoff)
         await wait(1000 * Math.pow(2, attempt));
       }
     }
   },
 
-  formatCoords(coords) {
-    if (!coords) return null;
-    
-    const lat = coords.coords?.latitude || coords.latitude;
-    const lng = coords.coords?.longitude || coords.longitude;
-    
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      throw new Error('Invalid coordinates format');
-    }
-
-    return `${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
-  }
 };
 
 
