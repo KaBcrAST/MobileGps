@@ -206,7 +206,6 @@ const Map = ({
     }
   };
 
-  // Afficher l'indicateur de chargement
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -226,7 +225,7 @@ const Map = ({
         style={mapStyles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         showsUserLocation={false}
-        followsUserLocation={false}  // ✅ Correct pour votre cas d'usage
+        followsUserLocation={false}
         showsCompass={true}
         rotateEnabled={!isNavigating}
         pitchEnabled={true}
@@ -251,7 +250,7 @@ const Map = ({
                 isPreviewMode={isPreviewMode}
                 mapRef={mapRef}
                 
-                fitToCoordinates={fitToCoordinates} // ⚠️ Passez la fonction ici
+                fitToCoordinates={fitToCoordinates}
               />
             )}
 
@@ -314,18 +313,10 @@ const Map = ({
             <Icon name="map-marker-path" size={24} color="#fff" />
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            onPress={() => handleViewMode('follow')}
-            style={[styles.topViewButton, styles.followButton]}
-          >
-            <Icon name="compass" size={24} color="#fff" />
-          </TouchableOpacity>
-
-          {/* Supprimez le bouton QR Scanner ici */}
+         
         </>
       )}
 
-      {/* Supprimez le composant QRScanner ici */}
 
       {/* Prévisualisation de route (modal ou overlay) */}
       {showRoutePreview && customDestination && (

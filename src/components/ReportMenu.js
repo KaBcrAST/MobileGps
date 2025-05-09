@@ -11,8 +11,6 @@ const { width } = Dimensions.get('window');
 
 const ReportMenu = ({ location }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [currentReport, setCurrentReport] = useState(null);
   const [soundReady, setSoundReady] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
   
@@ -105,7 +103,7 @@ const ReportMenu = ({ location }) => {
     });
   };
 
-  const sendReport = async (type) => {
+  const sendReport = async (type, label) => {
     if (!location?.coords) {
       showNotification('Erreur', 'Position non disponible', 'error');
       return;
@@ -128,30 +126,13 @@ const ReportMenu = ({ location }) => {
       });
 
       // Afficher la notification de succès
-      showNotification('Succès', `Alerte "${type.toLowerCase()}" signalée`);
+      showNotification('Succès', `Alerte "${label.toLowerCase()}" signalée`);
     } catch (error) {
       console.error('Report error:', error);
       showNotification('Erreur', 'Le signalement a échoué', 'error');
     }
 
-    toggleMenu();
-  };
-
-  const confirmReport = async () => {
-    if (currentReport) {
-      await sendReport(currentReport.type);
-      setShowConfirmation(false);
-      setCurrentReport(null);
-    }
-  };
-
-  // Montrer la confirmation avec effet sonore
-  const showReportConfirmation = (reportType) => {
-    // Jouer le son lors de l'ouverture de la confirmation
-    playAlertSound();
-    
-    setCurrentReport({ type: reportType });
-    setShowConfirmation(true);
+    toggleMenu(); // Fermer le menu après envoi
   };
 
   // Définition des 5 boutons d'alerte demandés
@@ -241,7 +222,7 @@ const ReportMenu = ({ location }) => {
             <TouchableOpacity
               key={button.type}
               style={styles.alertButton}
-              onPress={() => showReportConfirmation(button.type)}
+              onPress={() => sendReport(button.type, button.label)} // Envoyer directement le signalement
               activeOpacity={0.7}
               accessible={true}
               accessibilityLabel={`Signaler ${button.label}`}
@@ -280,42 +261,6 @@ const ReportMenu = ({ location }) => {
           </Animated.View>
         </TouchableOpacity>
       </View>
-
-      {/* Modal de confirmation */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showConfirmation}
-        onRequestClose={() => setShowConfirmation(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Icon 
-              name={buttons.find(b => b.type === currentReport?.type)?.icon || 'alert'} 
-              size={40} 
-              color={buttons.find(b => b.type === currentReport?.type)?.color || '#e74c3c'} 
-            />
-            <Text style={styles.modalTitle}>Confirmer le signalement</Text>
-            <Text style={styles.modalText}>
-              Voulez-vous signaler "{buttons.find(b => b.type === currentReport?.type)?.label || 'un incident'}" à cet endroit ?
-            </Text>
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowConfirmation(false)}
-              >
-                <Text style={styles.buttonText}>Annuler</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.confirmButton]}
-                onPress={confirmReport}
-              >
-                <Text style={styles.buttonText}>Confirmer</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </>
   );
 };
@@ -424,63 +369,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     marginTop: 2,
-  },
-  // Modal styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 25,
-    alignItems: 'center',
-    width: '80%',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginVertical: 15,
-    textAlign: 'center'
-  },
-  modalText: {
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: 'center',
-    color: '#666'
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%'
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 10,
-    marginHorizontal: 5
-  },
-  cancelButton: {
-    backgroundColor: '#95a5a6'
-  },
-  confirmButton: {
-    backgroundColor: '#2ecc71'
-  },
-  buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 16
   }
 });
 

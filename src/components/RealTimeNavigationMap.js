@@ -206,6 +206,8 @@ const Map = ({
                 isPreviewMode={isPreviewMode}
                 mapRef={mapRef}
                 fitToCoordinates={fitToCoordinates}
+                // Ne pas passer setActiveRoute si vous ne l'avez pas reçu en prop
+                // setActiveRoute={setActiveRoute} 
               />
             )}
 
