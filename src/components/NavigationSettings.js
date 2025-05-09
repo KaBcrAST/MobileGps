@@ -4,13 +4,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Importer les fonctions du service audio
+import { isSoundEnabled, setSoundEnabled } from '../services/trackService';
+
+// Clé pour stocker la préférence sonore
+const SOUND_ENABLED_KEY = 'soundEnabled';
+
 const NavigationSettings = ({ onTollPreferenceChange }) => {
   const [isTollDropdownOpen, setIsTollDropdownOpen] = useState(false);
+  const [isSoundDropdownOpen, setIsSoundDropdownOpen] = useState(false);
   const [avoidTolls, setAvoidTolls] = useState(false);
+  const [soundEnabled, setSoundEnabledState] = useState(true);
 
-  //pt
+  // Charger les préférences au démarrage
   useEffect(() => {
     loadTollPreference();
+    loadSoundPreference();
   }, []);
 
   const loadTollPreference = async () => {
@@ -24,8 +33,30 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     }
   };
 
+  const loadSoundPreference = async () => {
+    try {
+      // Utiliser la fonction du service pour vérifier l'état sonore
+      const isEnabled = await isSoundEnabled();
+      setSoundEnabledState(isEnabled);
+    } catch (error) {
+      console.error('Error loading sound preference:', error);
+    }
+  };
+
   const handleTollPress = () => {
     setIsTollDropdownOpen(!isTollDropdownOpen);
+    // Fermer l'autre menu si ouvert
+    if (!isTollDropdownOpen && isSoundDropdownOpen) {
+      setIsSoundDropdownOpen(false);
+    }
+  };
+
+  const handleSoundPress = () => {
+    setIsSoundDropdownOpen(!isSoundDropdownOpen);
+    // Fermer l'autre menu si ouvert
+    if (!isSoundDropdownOpen && isTollDropdownOpen) {
+      setIsTollDropdownOpen(false);
+    }
   };
 
   const handleTollToggle = async (value) => {
@@ -41,10 +72,25 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     }
   };
 
+  const handleSoundToggle = async (value) => {
+    try {
+      // Mettre à jour l'état local
+      setSoundEnabledState(value);
+      
+      // Utiliser la fonction du service pour définir l'état sonore
+      await setSoundEnabled(value);
+      
+      console.log(`🔊 Sons ${value ? 'activés' : 'désactivés'}`);
+    } catch (error) {
+      console.error('Error saving sound preference:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Paramètres Navigation</Text>
       
+      {/* Section Péages */}
       <View>
         <TouchableOpacity 
           style={styles.settingItem}
@@ -70,6 +116,50 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
                 onValueChange={handleTollToggle}
                 trackColor={{ false: "#767577", true: "#81b0ff" }}
                 thumbColor={avoidTolls ? "#2196F3" : "#f4f3f4"}
+                ios_backgroundColor="#3e3e3e"
+                accessible={true}
+                accessibilityLabel={avoidTolls ? "Ne pas éviter les péages" : "Éviter les péages"}
+                accessibilityHint="Double-tapez pour modifier votre préférence concernant les péages"
+              />
+            </View>
+          </View>
+        )}
+      </View>
+      
+      {/* Section Sons */}
+      <View style={styles.menuSeparator}>
+        <TouchableOpacity 
+          style={styles.settingItem}
+          onPress={handleSoundPress}
+        >
+          <View style={styles.settingContent}>
+            <Ionicons 
+              name={soundEnabled ? "volume-high-outline" : "volume-mute-outline"} 
+              size={24} 
+              color="#333" 
+            />
+            <Text style={styles.settingText}>Sons</Text>
+          </View>
+          <Ionicons 
+            name={isSoundDropdownOpen ? "chevron-down" : "chevron-forward"} 
+            size={24} 
+            color="#666" 
+          />
+        </TouchableOpacity>
+
+        {isSoundDropdownOpen && (
+          <View style={styles.dropdownContent}>
+            <View style={styles.toggleItem}>
+              <Text style={styles.toggleText}>Activer les sons</Text>
+              <Switch
+                value={soundEnabled}
+                onValueChange={handleSoundToggle}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={soundEnabled ? "#2196F3" : "#f4f3f4"}
+                ios_backgroundColor="#3e3e3e"
+                accessible={true}
+                accessibilityLabel={soundEnabled ? "Désactiver les sons" : "Activer les sons"}
+                accessibilityHint="Double-tapez pour activer ou désactiver les sons de l'application"
               />
             </View>
           </View>
@@ -123,6 +213,11 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: 15,
     color: '#333',
+  },
+  menuSeparator: {
+    marginTop: 5,
+    borderTopWidth: 0.5,
+    borderTopColor: '#e0e0e0',
   }
 });
 

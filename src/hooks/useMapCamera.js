@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 
 // Hook principal avec fonctionnalités améliorées de style Waze/Google Maps
 const useMapCamera = (mapRef, location, heading, isNavigating, { destination, coordinates } = {}) => {
@@ -18,18 +19,24 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   // Pour empêcher les mises à jour automatiques
   const blockAutoUpdates = useRef(false);
   
-  // Constantes optimisées pour une expérience style Waze
+  // Constantes optimisées pour une expérience style Waze - AJUSTÉES POUR ANDROID
   const MINIMUM_UPDATE_INTERVAL = 200;
   const DIRECTION_THRESHOLD = 0.3;
-  const NAVIGATION_ALTITUDE = 60;
-  const NORMAL_ALTITUDE = 100;
+  
+  // Valeurs uniformisées pour Android et iOS
+  const isAndroid = Platform.OS === 'android';
+  
+  // Altitude plus basse pour Android
+  const NAVIGATION_ALTITUDE = isAndroid ? 40 : 60;
+  const NORMAL_ALTITUDE = isAndroid ? 70 : 100;
   const PREVIEW_ALTITUDE = 1000;
+  
+  // Angle d'inclinaison identique pour les deux plateformes
   const NAVIGATION_PITCH = 70;
   const NORMAL_PITCH = 70;
   
-  // CORRECTION: Décalage vers l'ARRIÈRE en mode navigation (valeur négative)
-  // Ce qui placera la caméra derrière la position GPS et regardant vers l'avant
-  const OFFSET_DISTANCE = 0; // Décalage de 40 mètres DERRIÈRE la position GPS
+  // Décalage de la caméra par rapport à la position GPS - AJUSTÉ POUR ANDROID
+  const OFFSET_DISTANCE = isAndroid ? -60 : 0; // Décalage plus important sur Android pour rapprocher la vue
 
   // Amélioration de la fonction offsetCoordinates pour de grands décalages
   const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {
@@ -115,7 +122,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     }
   }, [mapRef]);
 
-  // MODIFIÉ: Configuration de caméra avec décalage correct
+  // MODIFIÉ: Configuration de caméra avec décalage correct et paramètres uniformisés
   const getCameraConfig = useCallback((coords, navigating, currentHeading) => {
     if (!coords) return null;
     
@@ -135,7 +142,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
         pitch: NAVIGATION_PITCH,
         heading: headingToUse, // La caméra regarde dans le sens du déplacement
         altitude: NAVIGATION_ALTITUDE,
-        zoom: 18
+        zoom: isAndroid ? 18.5 : 18 // Zoom plus élevé sur Android pour compenser
       };
     } else {
       // En mode normal (non-navigation)
@@ -147,10 +154,10 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
         pitch: NORMAL_PITCH,
         heading: headingToUse,
         altitude: NORMAL_ALTITUDE,
-        zoom: 17
+        zoom: isAndroid ? 17.5 : 17 // Zoom plus élevé sur Android pour compenser
       };
     }
-  }, [offsetCoordinates]);
+  }, [offsetCoordinates, NAVIGATION_ALTITUDE, NORMAL_ALTITUDE, OFFSET_DISTANCE, isAndroid]);
 
   // Autres fonctions existantes - inchangées
   const temporarilyDisableTracking = useCallback((durationMs = 5000) => {
@@ -222,7 +229,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     previousPosition.current = currentPosition;
   }, [location?.coords?.latitude, location?.coords?.longitude, heading, isCameraLocked, getDistance, getBearing]);
 
-  // MODIFIÉ: Effet principal pour le mode navigation
+  // MODIFIÉ: Effet principal pour le mode navigation - avec paramètres adaptés pour Android
   useEffect(() => {
     if (!isNavigating || !mapRef?.current || !location?.coords || !isCameraLocked || blockAutoUpdates.current) {
       return;
@@ -238,26 +245,29 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     const nextPoint = findNextPoint(location.coords, coordinates);
     const directionToUse = nextPoint ? getBearing(location.coords, nextPoint) : (calculatedHeading.current || heading || 0);
     
-    // CORRECTION: Placer la caméra DERRIÈRE la position GPS avec OFFSET_DISTANCE négatif
+    // CORRECTION: Placer la caméra DERRIÈRE la position GPS par rapport à la direction
     const offsetCenter = offsetCoordinates(
       location.coords.latitude, 
       location.coords.longitude, 
-      // Rotation de 180° pour corriger la direction de la caméra
-      (directionToUse + 180) % 360,  // Orientée vers l'arrière pour le placement
-      Math.abs(OFFSET_DISTANCE)  // Utilise la valeur absolue pour la distance
+      // On ajoute 180° pour placer la caméra DERRIÈRE la position dans le sens de la marche
+      (directionToUse + 180) % 360,  // Direction opposée à la direction de déplacement
+      Math.abs(OFFSET_DISTANCE)      // Distance derrière le point GPS
     );
     
     const camera = {
-      center: offsetCenter,
-      pitch: NAVIGATION_PITCH,
-      heading: directionToUse,  // La caméra regarde vers l'AVANT (direction de déplacement)
+      center: offsetCenter,          // Position de la caméra (derrière le point GPS)
+      pitch: NAVIGATION_PITCH,       // Angle d'inclinaison vers le bas
+      heading: directionToUse,       // La caméra regarde dans la direction de déplacement
       altitude: NAVIGATION_ALTITUDE,
-      zoom: 18, // Légère augmentation du zoom pour une meilleure visibilité
+      zoom: isAndroid ? 18.5 : 18,   // Zoom plus élevé sur Android
     };
     
-    animateCameraSafely(camera, { duration: 800 });
+    // Animation plus fluide sur Android
+    animateCameraSafely(camera, { duration: isAndroid ? 600 : 800 });
     
-  }, [mapRef, location?.coords?.latitude, location?.coords?.longitude, isNavigating, isCameraLocked, coordinates, heading, getBearing, findNextPoint, animateCameraSafely, offsetCoordinates]);
+  }, [mapRef, location?.coords?.latitude, location?.coords?.longitude, isNavigating, 
+      isCameraLocked, coordinates, heading, getBearing, findNextPoint, 
+      animateCameraSafely, offsetCoordinates, isAndroid, NAVIGATION_ALTITUDE, OFFSET_DISTANCE]);
 
   // Le reste du code reste inchangé
   const forceInitialLowView = useCallback(() => {

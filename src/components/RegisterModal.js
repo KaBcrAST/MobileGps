@@ -49,7 +49,7 @@ const RegisterModal = ({ visible, onClose }) => {
         password: hashPassword(formData.password)
       };
 
-      const response = await axios.post(`${API_URL}/auth/register`, secureFormData);
+      const response = await axios.post(`${API_URL}/api/auth/register`, secureFormData);
       const data = response.data;
 
       if (data.success) {

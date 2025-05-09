@@ -2,19 +2,63 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, Animated, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getAlertIcon, getAlertColor } from './ClusterUtils';
+import { setupTrackService, loadSound, playSound } from '../../services/trackService';
 
 const ClusterAlert = ({ cluster, distance, onDismiss, onStillPresent }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const soundLoadedRef = useRef(false);
 
+  // Initialiser et charger le son d'alerte
+  useEffect(() => {
+    const initSound = async () => {
+      try {
+        // Initialiser le service audio si ce n'est pas déjà fait
+        await setupTrackService();
+        
+        // Charger le son d'alerte
+        const success = await loadSound(
+          'clusteralert',
+          require('../../../assets/sounds/clusteralert.mp3'),
+          'Cluster Alert Sound'
+        );
+        
+        if (success) {
+          console.log('✅ Son d\'alerte de cluster chargé avec succès');
+          soundLoadedRef.current = true;
+        }
+      } catch (e) {
+        console.error('❌ Erreur lors du chargement du son d\'alerte:', e);
+      }
+    };
+    
+    initSound();
+  }, []);
+
+  // Gestion de l'animation et lecture du son quand une alerte apparaît
   useEffect(() => {
     if (cluster) {
+      // Animer l'apparition de l'alerte
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }).start();
+      
+      // Jouer le son d'alerte
+      const playAlertSound = async () => {
+        if (soundLoadedRef.current) {
+          try {
+            console.log('▶️ Lecture du son d\'alerte de cluster...');
+            await playSound('clusteralert', 0.2); // Volume à 20%
+          } catch (e) {
+            console.error('❌ Erreur lors de la lecture du son d\'alerte:', e);
+          }
+        }
+      };
+      
+      playAlertSound();
     }
-  }, [cluster]);
+  }, [cluster, fadeAnim]);
 
   if (!cluster) return null;
 
@@ -52,6 +96,7 @@ const ClusterAlert = ({ cluster, distance, onDismiss, onStillPresent }) => {
   );
 };
 
+// Styles inchangés
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',

@@ -28,7 +28,10 @@
     "react-native-maps": "1.20.1",
     "react-native-maps-directions": "^1.9.0",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.10.0"
+    "react-native-screens": "~4.10.0",
+    "react-native-sound": "^0.11.2",
+    "react-native-track-player": "^4.1.1",
+    "expo-av": "~15.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
