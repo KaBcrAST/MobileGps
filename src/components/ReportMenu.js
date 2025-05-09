@@ -3,10 +3,8 @@ import { View, TouchableOpacity, StyleSheet, Animated, Modal, Text, Dimensions }
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import { API_URL } from '../config/config';
-// Importer les fonctions audio
 import { setupTrackService, loadSound, playSound } from '../services/trackService';
 
-// Obtenir les dimensions de l'écran pour le positionnement
 const { width } = Dimensions.get('window');
 
 const ReportMenu = ({ location }) => {
@@ -14,18 +12,14 @@ const ReportMenu = ({ location }) => {
   const [soundReady, setSoundReady] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
   
-  // États pour la notification
   const [notification, setNotification] = useState(null);
   const notificationAnim = useRef(new Animated.Value(100)).current;
 
-  // Initialiser le système audio au montage du composant
   useEffect(() => {
     const setupAudio = async () => {
       try {
-        // Initialiser le service audio
         await setupTrackService();
         
-        // Charger le son pour l'alerte
         const success = await loadSound(
           'achievement', 
           require('../../assets/sounds/achievement.mp3'), 
@@ -33,7 +27,6 @@ const ReportMenu = ({ location }) => {
         );
         
         if (success) {
-          console.log('Son d\'alerte chargé avec succès');
           setSoundReady(true);
         }
       } catch (e) {
@@ -44,20 +37,17 @@ const ReportMenu = ({ location }) => {
     setupAudio();
   }, []);
 
-  // Animation de la notification
   useEffect(() => {
     if (notification) {
-      // Animation d'entrée (de droite à gauche)
       Animated.timing(notificationAnim, {
         toValue: 0,
         duration: 300,
         useNativeDriver: true,
       }).start();
 
-      // Masquer la notification après un délai
       const timer = setTimeout(() => {
         Animated.timing(notificationAnim, {
-          toValue: 100, // Retour vers la droite
+          toValue: 100,
           duration: 300,
           useNativeDriver: true,
         }).start(() => {
@@ -69,18 +59,14 @@ const ReportMenu = ({ location }) => {
     }
   }, [notification, notificationAnim]);
 
-  // Fonction pour jouer le son d'alerte
   const playAlertSound = async () => {
     if (soundReady) {
       try {
-        console.log('Lecture du son d\'alerte...');
         await playSound('achievement', 1.0);
       } catch (e) {
         console.error('Erreur lors de la lecture du son:', e);
       }
-    } else {
-      console.log('Son non prêt, impossible de jouer');
-    }
+    } 
   };
 
   const toggleMenu = () => {
@@ -94,7 +80,6 @@ const ReportMenu = ({ location }) => {
     setIsOpen(!isOpen);
   };
 
-  // Afficher une notification
   const showNotification = (title, message, type = 'success') => {
     setNotification({
       title,
@@ -110,9 +95,7 @@ const ReportMenu = ({ location }) => {
     }
 
     try {
-      // Jouer le son immédiatement quand l'utilisateur clique sur un bouton d'alerte
       playAlertSound();
-      
       await axios.post(`${API_URL}/api/reports`, {
         type,
         latitude: location.coords.latitude,
@@ -125,17 +108,15 @@ const ReportMenu = ({ location }) => {
         }
       });
 
-      // Afficher la notification de succès
       showNotification('Succès', `Alerte "${label.toLowerCase()}" signalée`);
     } catch (error) {
       console.error('Report error:', error);
       showNotification('Erreur', 'Le signalement a échoué', 'error');
     }
 
-    toggleMenu(); // Fermer le menu après envoi
+    toggleMenu(); 
   };
 
-  // Définition des 5 boutons d'alerte demandés
   const buttons = [
     { 
       icon: 'car-emergency',
@@ -171,7 +152,6 @@ const ReportMenu = ({ location }) => {
 
   return (
     <>
-      {/* Notification repositionnée à droite au-dessus du bouton */}
       {notification && (
         <Animated.View 
           style={[
@@ -196,7 +176,6 @@ const ReportMenu = ({ location }) => {
         </Animated.View>
       )}
 
-      {/* Menu principal des alertes */}
       <Animated.View 
         style={[
           styles.reportPanel,
@@ -204,7 +183,7 @@ const ReportMenu = ({ location }) => {
             transform: [
               { translateY: animation.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [200, 0], // Glisse depuis le bas
+                  outputRange: [200, 0],
                 })
               },
             ],
@@ -222,7 +201,7 @@ const ReportMenu = ({ location }) => {
             <TouchableOpacity
               key={button.type}
               style={styles.alertButton}
-              onPress={() => sendReport(button.type, button.label)} // Envoyer directement le signalement
+              onPress={() => sendReport(button.type, button.label)} 
               activeOpacity={0.7}
               accessible={true}
               accessibilityLabel={`Signaler ${button.label}`}
@@ -237,7 +216,6 @@ const ReportMenu = ({ location }) => {
         </View>
       </Animated.View>
 
-      {/* Bouton principal pour ouvrir/fermer le menu */}
       <View style={styles.container}>
         <TouchableOpacity
           style={styles.menuButton}
@@ -265,7 +243,6 @@ const ReportMenu = ({ location }) => {
   );
 };
 
-// Les styles mis à jour pour le nouveau menu
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -288,11 +265,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
   },
-  // Panel pour les boutons d'alerte
   reportPanel: {
     position: 'absolute',
     right: 20,
-    bottom: 280, // Au-dessus du bouton principal
+    bottom: 280,
     width: width - 40,
     backgroundColor: 'white',
     borderRadius: 15,
@@ -337,7 +313,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
   },
-  // Notification styles
   notification: {
     position: 'absolute',
     right: 30,

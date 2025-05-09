@@ -28,11 +28,7 @@ const Map = ({
   routes,
   selectedRoute,
   onRouteSelect,
-  followsUserLocation,
-  // Supprimez cette prop pour éviter la collision avec l'état local
-  // loading
 }) => {
-  // Gardez uniquement cette déclaration de l'état loading
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [mapConfig, setMapConfig] = useState(null);
@@ -43,32 +39,24 @@ const Map = ({
   const [notifiedClusters] = useState(new Set());
   
   const { 
-    isCameraLocked,
     isPreviewMode,
-    unlockCamera,
-    lockCamera,
-    NAVIGATION_ALTITUDE,
-    PREVIEW_ALTITUDE,
     NORMAL_ALTITUDE,
     forceInitialLowView,
     fitToCoordinates,
-    temporarilyDisableTracking
   } = useMapCamera(mapRef, location, heading, isNavigating, { 
     destination, 
     coordinates: activeRoute?.coordinates 
   });
 
-  // Vous pouvez définir une fonction locale pour remplacer setCameraMode
   const handleViewMode = (mode) => {
     console.log(`Mode vue: ${mode}`);
-    // Implémentation simplifiée selon le mode
     if (mode === 'overhead' && mapRef?.current && location?.coords) {
       mapRef.current.animateCamera({
         center: {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
-        pitch: 0, // Vue du dessus
+        pitch: 0,
         altitude: NORMAL_ALTITUDE * 1.5,
         zoom: 17
       }, { duration: 500 });
@@ -84,8 +72,6 @@ const Map = ({
       }, { duration: 500 });
     }
   };
-
-  // Ajouter au début du composant:
   useEffect(() => {
     console.log('🗺️ Map Component: Navigation state changed to', isNavigating);
     return () => {
@@ -93,7 +79,6 @@ const Map = ({
     };
   }, [isNavigating]);
 
-  // Récupérer les clusters sert
   useEffect(() => {
     const fetchClusters = async () => {
       if (!location?.coords) return;
@@ -135,12 +120,10 @@ const Map = ({
     return () => clearInterval(interval);
   }, [location]);
 
-  // Gérer l'affichage de la route sert
   useEffect(() => {
     setShowRoute(isNavigating);
   }, [isNavigating]);
 
-  // Pour le débogage
   useEffect(() => {
     console.log('Navigation state changed:', { 
       isNavigating, 
@@ -149,12 +132,10 @@ const Map = ({
     });
   }, [isNavigating, activeRoute]);
 
-  // Fonction de gestion du chargement de la carte
   const handleMapReady = () => {
     setIsMapReady(true);
     setLoading(false);
     
-    // Forcer uniquement la vue initiale basse après un court délai
     setTimeout(() => {
       if (forceInitialLowView) {
         forceInitialLowView();
@@ -162,7 +143,6 @@ const Map = ({
     }, 500);
   };
 
-  // Afficher l'indicateur de chargement
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -178,20 +158,18 @@ const Map = ({
         style={mapStyles.map}
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         showsUserLocation={false}
-        followsUserLocation={false}  // ✅ Correct pour votre cas d'usage
-        showsCompass={!isNavigating} // Masquer la boussole en navigation
-        rotateEnabled={!isNavigating} // Désactiver la rotation manuelle en navigation
-        pitchEnabled={!isNavigating} // Désactiver l'inclinaison manuelle en navigation
-        scrollEnabled={!isNavigating} // Désactiver le défilement manuel en navigation
-        zoomEnabled={!isNavigating} // Désactiver le zoom manuel en navigation
+        followsUserLocation={false} 
+        showsCompass={!isNavigating}
+        rotateEnabled={!isNavigating} 
+        pitchEnabled={!isNavigating} 
+        scrollEnabled={!isNavigating} 
+        zoomEnabled={!isNavigating} 
         moveOnMarkerPress={false}
         onMapReady={handleMapReady}
       >
-        {/* SUPPRIMÉ LE PREMIER ROUTEPOLYLINES ICI - C'ÉTAIT LE DOUBLON */}
         
         {(isMapReady || !loading) && (
           <>
-            {/* Gardé uniquement cette instance de RoutePolylines */}
             {showRoute && (
               <RoutePolylines 
                 showRoutes={showRoutes}
@@ -206,8 +184,7 @@ const Map = ({
                 isPreviewMode={isPreviewMode}
                 mapRef={mapRef}
                 fitToCoordinates={fitToCoordinates}
-                // Ne pas passer setActiveRoute si vous ne l'avez pas reçu en prop
-                // setActiveRoute={setActiveRoute} 
+                
               />
             )}
 

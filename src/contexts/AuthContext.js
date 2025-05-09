@@ -1,7 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../config/config'; // Importer l'URL depuis config
-
+import { API_URL } from '../config/config'; 
 const AuthContext = createContext();
 
 const STORAGE_KEYS = {
@@ -39,7 +38,6 @@ export const AuthProvider = ({ children }) => {
   const login = async (data) => {
     try {
       if (data.user && !data.user._id) {
-        // Utiliser API_URL depuis config.js au lieu de l'URL codée en dur
         const response = await fetch(`${API_URL}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${data.token}`
@@ -51,7 +49,6 @@ export const AuthProvider = ({ children }) => {
           data.user = { ...data.user, _id: userData._id };
         }
       }
-
       await Promise.all([
         AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)),
         AsyncStorage.setItem(STORAGE_KEYS.TOKEN, data.token)

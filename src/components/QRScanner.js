@@ -43,7 +43,7 @@ const QRScanner = ({ onQRScanned, visible, onClose, setSearchQuery }) => {
           const route = await startDirectNavigation(
             currentPosition,
             destination,
-            false // avoidTolls par défaut
+            false
           );
           
           onQRScanned({

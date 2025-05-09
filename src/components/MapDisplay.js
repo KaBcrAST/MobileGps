@@ -3,7 +3,6 @@ import { Platform, ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, 
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Ionicons } from '@expo/vector-icons';
 import { mapStyles } from '../styles/globalStyles';
 import {
   getClusterIcon,
@@ -16,10 +15,9 @@ import RoutePolylines from './routes/RoutePolylines';
 import LocationMarker from './markers/LocationMarker';
 import { API_URL } from '../config/config';
 import useMapCamera from '../hooks/useMapCamera';
-import FloatingMenu from './FloatingMenu'; // Nous gardons uniquement cette importation
+import FloatingMenu from './FloatingMenu'; 
 import RoutePreview from './RoutePreview/RoutePreview';
 
-//normal display sans navigation
 const Map = ({ 
   mapRef,
   location,
@@ -34,7 +32,6 @@ const Map = ({
   onRouteSelect,
   onStartNavigation, 
 }) => {
-  // Supprimez l'état qrScannerVisible
   const [showRoutePreview, setShowRoutePreview] = useState(false);
   const [customDestination, setDestination] = useState(null);
   const [avoidTolls, setAvoidTolls] = useState(false);
@@ -56,12 +53,9 @@ const Map = ({
     coordinates: activeRoute?.coordinates 
   });
 
-  // Fonction pour gérer les coordonnées obtenues depuis le QR code
   const handleQRScanned = (scannedLocation) => {
-    console.log("Coordonnées scannées:", scannedLocation);
     
     if (scannedLocation && scannedLocation.latitude && scannedLocation.longitude) {
-      // Définir la destination
       setDestination({
         latitude: scannedLocation.latitude,
         longitude: scannedLocation.longitude,
@@ -69,32 +63,25 @@ const Map = ({
         address: scannedLocation.address || scannedLocation.name || `Coordonnées GPS: ${scannedLocation.latitude}, ${scannedLocation.longitude}`
       });
       
-      // Afficher la prévisualisation de route
       setShowRoutePreview(true);
     } else {
-      console.error("Format de coordonnées invalide ou incomplet");
       Alert.alert("Erreur", "Les coordonnées scannées sont invalides ou incomplètes");
     }
   };
 
-  // Ajouter au début du composant:
   useEffect(() => {
-    console.log('🗺️ Map Component: Navigation state changed to', isNavigating);
     return () => {
-      console.log('🗺️ Map Component: Cleanup triggered');
     };
   }, [isNavigating]);
 
-  // Gérer la sélection d'itinéraire dans la prévisualisation
   const handlePreviewRouteSelect = useCallback((route) => {
     if (onRouteSelect) {
       onRouteSelect(route);
     }
   }, [onRouteSelect]);
   
-  // Gérer le démarrage de la navigation depuis la prévisualisation
   const handleStartNavigationFromPreview = useCallback((routeInfo) => {
-    setShowRoutePreview(false); // Fermer la prévisualisation
+    setShowRoutePreview(false);
     
     if (onStartNavigation) {
       onStartNavigation(routeInfo);
@@ -103,7 +90,6 @@ const Map = ({
     }
   }, [onStartNavigation]);
   
-  // Récupérer les clusters
   useEffect(() => {
     const fetchClusters = async () => {
       if (!location?.coords) return;
@@ -136,7 +122,7 @@ const Map = ({
           });
         }
       } catch (error) {
-        console.error('Failed to fetch clusters:', error);
+        console.log('Failed to fetch clusters:', error);
       }
     };
 
@@ -145,12 +131,10 @@ const Map = ({
     return () => clearInterval(interval);
   }, [location]);
 
-  // Gérer l'affichage de la route
   useEffect(() => {
     setShowRoute(isNavigating);
   }, [isNavigating]);
 
-  // Pour le débogage
   useEffect(() => {
     console.log('Navigation state changed:', { 
       isNavigating, 
@@ -159,12 +143,10 @@ const Map = ({
     });
   }, [isNavigating, activeRoute]);
 
-  // Fonction de gestion du chargement de la carte
   const handleMapReady = () => {
     setIsMapReady(true);
     setLoading(false);
     
-    // Forcer uniquement la vue initiale basse après un court délai
     setTimeout(() => {
       if (forceInitialLowView) {
         forceInitialLowView();
@@ -172,15 +154,12 @@ const Map = ({
     }, 500);
   };
 
-  // Cherchez et modifiez des effets comme celui-ci:
   useEffect(() => {
     if (mapRef.current && location?.coords) {
-      // Si vous voyez du code qui met à jour la caméra ici, commentez-le
-      // mapRef.current.animateCamera({...});
+      
     }
   }, [location]);
 
-  // Fonctions pour le mode de vue
   const handleViewMode = (mode) => {
     if (mode === 'overhead' && mapRef.current && location?.coords) {
       mapRef.current.animateCamera({
@@ -293,17 +272,15 @@ const Map = ({
         setClusterDistance={setClusterDistance}
       />
 
-      {/* FloatingMenu avec la fonction QR Scanner */}
       {!isNavigating && (
         <FloatingMenu 
           onTollPreferenceChange={setAvoidTolls}
           avoidTolls={avoidTolls}
-          onQRScanned={handleQRScanned} // Passez la fonction de traitement QR ici
+          onQRScanned={handleQRScanned}
           onReinitializeCamera={forceInitialLowView}
         />
       )}
 
-      {/* Boutons de vue (si vous souhaitez les conserver) */}
       {!isNavigating && (
         <>
           <TouchableOpacity 
@@ -316,9 +293,6 @@ const Map = ({
          
         </>
       )}
-
-
-      {/* Prévisualisation de route (modal ou overlay) */}
       {showRoutePreview && customDestination && (
         <RoutePreview
           origin={location}
@@ -370,12 +344,12 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   followButton: {
-    bottom: 80, // Au-dessus du premier bouton
+    bottom: 80,
     backgroundColor: '#27ae60',
   },
   qrButton: {
-    bottom: 140, // Au-dessus des deux autres boutons
-    backgroundColor: '#9b59b6', // Couleur violette pour le distinguer
+    bottom: 140, 
+    backgroundColor: '#9b59b6', 
   }
 });
 

@@ -21,29 +21,21 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
     setIsOpen(!isOpen);
   };
 
-  // Fonction pour gérer l'ouverture du scanner QR avec plus de robustesse
   const handleQRScannerPress = () => {
-    console.log("Bouton QR Code cliqué");
 
-    // Fermer le menu avant d'ouvrir le scanner
     if (isOpen) {
       toggleMenu();
     }
 
-    // Petit délai pour s'assurer que le menu est fermé avant d'ouvrir le scanner
     setTimeout(() => {
-      // Vérifier si la fonction est bien définie
       if (typeof onOpenQRScanner === 'function') {
-        console.log("Ouverture du scanner QR");
         onOpenQRScanner();
       } else {
-        console.error("onOpenQRScanner n'est pas défini ou n'est pas une fonction");
         Alert.alert("Erreur", "La fonction de scan QR n'est pas disponible actuellement");
       }
     }, 300);
   };
 
-  // Si le menu est à côté de la SearchBar, on utilise un style différent
   if (isNextToSearchBar) {
     return (
       <>
@@ -54,7 +46,6 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
           accessibilityLabel="Ouvrir le menu"
           accessibilityHint="Double-tapez pour ouvrir le menu latéral"
         >
-          {/* Flèche vers la droite */}
           <Ionicons name="chevron-forward" size={24} color="#000" />
         </TouchableOpacity>
         
@@ -72,7 +63,6 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
               onTollPreferenceChange={onTollPreferenceChange}
             />
 
-            {/* Bouton pour scanner un QR code avec meilleure accessibilité */}
             <TouchableOpacity 
               style={styles.qrScannerButton}
               onPress={handleQRScannerPress}
@@ -90,7 +80,6 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
     );
   }
 
-  // Rendu standard (position absolue)
   return (
     <Animated.View 
       style={[styles.slideMenu, {
@@ -106,7 +95,6 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
         accessibilityHint="Double-tapez pour ouvrir le menu latéral"
       >
         <View style={styles.iconContainer}>
-          {/* Flèche vers la droite */}
           <Ionicons name="chevron-forward" size={24} color="#000" />
         </View>
       </TouchableOpacity>
@@ -118,7 +106,6 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
         onTollPreferenceChange={onTollPreferenceChange}
       />
       
-      {/* Bouton pour scanner un QR code avec meilleure accessibilité */}
       <TouchableOpacity 
         style={styles.qrScannerButton}
         onPress={handleQRScannerPress}
@@ -141,18 +128,17 @@ const styles = StyleSheet.create({
     right: -60,
     backgroundColor: '#FFFFFF',
     borderRadius: 25,
-    zIndex: 1002, // Augmenté pour être au-dessus de SearchBar (1001)
+    zIndex: 1002,
     height: 50,
     width: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 6, // Augmenté pour Android
+    elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
-  // Style pour le bouton quand il est à côté de la SearchBar
   searchBarMenuButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 25,
@@ -164,8 +150,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 6, // Augmenté
-    zIndex: 1002, // Augmenté pour être au-dessus de SearchBar
+    elevation: 6,
+    zIndex: 1002,
   },
   iconContainer: {
     width: '100%',
@@ -180,9 +166,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '80%',
     backgroundColor: '#FFFFFF',
-    elevation: 6, // Augmenté
-    zIndex: 1005, // Valeur plus élevée pour assurer qu'il est au-dessus de tout
-    paddingTop: 40, // Espace en haut du menu
+    elevation: 6,
+    zIndex: 1005,
+    paddingTop: 40,
   },
   qrScannerButton: {
     flexDirection: 'row',

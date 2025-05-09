@@ -3,11 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Importer les fonctions du service audio
 import { isSoundEnabled, setSoundEnabled } from '../services/trackService';
 
-// Clé pour stocker la préférence sonore
 const SOUND_ENABLED_KEY = 'soundEnabled';
 
 const NavigationSettings = ({ onTollPreferenceChange }) => {
@@ -16,7 +13,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
   const [avoidTolls, setAvoidTolls] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(true);
 
-  // Charger les préférences au démarrage
   useEffect(() => {
     loadTollPreference();
     loadSoundPreference();
@@ -35,7 +31,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
 
   const loadSoundPreference = async () => {
     try {
-      // Utiliser la fonction du service pour vérifier l'état sonore
       const isEnabled = await isSoundEnabled();
       setSoundEnabledState(isEnabled);
     } catch (error) {
@@ -45,7 +40,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
 
   const handleTollPress = () => {
     setIsTollDropdownOpen(!isTollDropdownOpen);
-    // Fermer l'autre menu si ouvert
     if (!isTollDropdownOpen && isSoundDropdownOpen) {
       setIsSoundDropdownOpen(false);
     }
@@ -53,7 +47,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
 
   const handleSoundPress = () => {
     setIsSoundDropdownOpen(!isSoundDropdownOpen);
-    // Fermer l'autre menu si ouvert
     if (!isSoundDropdownOpen && isTollDropdownOpen) {
       setIsTollDropdownOpen(false);
     }
@@ -63,7 +56,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     setAvoidTolls(value);
     try {
       await AsyncStorage.setItem('avoidTolls', JSON.stringify(value));
-      // Notify parent component about the change
       if (onTollPreferenceChange) {
         onTollPreferenceChange(value);
       }
@@ -74,10 +66,7 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
 
   const handleSoundToggle = async (value) => {
     try {
-      // Mettre à jour l'état local
       setSoundEnabledState(value);
-      
-      // Utiliser la fonction du service pour définir l'état sonore
       await setSoundEnabled(value);
       
       console.log(`🔊 Sons ${value ? 'activés' : 'désactivés'}`);
@@ -90,7 +79,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Paramètres Navigation</Text>
       
-      {/* Section Péages */}
       <View>
         <TouchableOpacity 
           style={styles.settingItem}
@@ -126,7 +114,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
         )}
       </View>
       
-      {/* Section Sons */}
       <View style={styles.menuSeparator}>
         <TouchableOpacity 
           style={styles.settingItem}

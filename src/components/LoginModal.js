@@ -5,7 +5,6 @@ import { useAuth } from '../contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
 import RegisterModal from './RegisterModal';
 import CryptoJS from 'crypto-js';
-import { Platform } from 'react-native';
 import { API_URL } from '../config/config';
 
 const LoginModal = ({ visible, onClose }) => {
@@ -52,7 +51,6 @@ const LoginModal = ({ visible, onClose }) => {
 
   const handleGoogleLogin = async () => {
     try {
-      console.log('Starting Google OAuth...');
       
       const result = await WebBrowser.openAuthSessionAsync(
         `${API_URL}/api/auth/google`,
@@ -63,11 +61,7 @@ const LoginModal = ({ visible, onClose }) => {
         }
       );
 
-      console.log('OAuth Result:', {
-        type: result.type,
-        hasUrl: !!result.url
-      });
-
+      
       if (result.type === 'success' && result.url) {
         const url = new URL(result.url);
         const params = new URLSearchParams(url.search);
@@ -84,7 +78,6 @@ const LoginModal = ({ visible, onClose }) => {
         onClose();
       }
     } catch (error) {
-      console.error('Google login error:', error);
       setErrors({ 
         submit: 'Erreur de connexion Google: ' + error.message 
       });
