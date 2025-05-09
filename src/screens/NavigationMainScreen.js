@@ -8,7 +8,6 @@ import ReportMenu from '../components/ReportMenu';
 import RoutePreview from '../components/RoutePreview/RoutePreview';
 import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
-
 import globalStyles from '../styles/globalStyles';
 import NavigationScreen from '../components/navigation/NavigationScreen';
 import useMapCamera from '../hooks/useMapCamera';
@@ -22,10 +21,9 @@ export default function NavigationMainScreen() {
     destination, 
     setDestination, 
     routeInfo, 
-    setRouteInfo, // Ajout de setRouteInfo ici
+    setRouteInfo,
     isNavigating,
     setIsNavigating,
-    startNavigation,
     endNavigation,
     heading,
     avoidTolls,
@@ -38,20 +36,17 @@ export default function NavigationMainScreen() {
     isCameraLocked, 
     unlockCamera, 
     lockCamera,
-    resetCameraView,
-    focusOnLocation,
     fitToCoordinates,
     temporarilyDisableTracking
   } = useMapCamera(mapRef, location, heading, isNavigating);
   
   const [showRoutes, setShowRoutes] = useState(false);
-  const [routes, setRoutes] = useState([]); // Ajout de routes state
+  const [routes, setRoutes] = useState([]);
   const [selectedRoute, setSelectedRoute] = useState(0);
   const [qrScannerVisible, setQRScannerVisible] = useState(false);
-  const [loading, setLoading] = useState(false); // Ajout de l'état loading
-  const [searchQuery, setSearchQuery] = useState(''); // Ajout de searchQuery state
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // Fonction de sélection de route
   const onRouteSelect = (route) => {
     setSelectedRoute(route.index || 0);
     if (routes && routes.length > 0) {
@@ -64,7 +59,6 @@ export default function NavigationMainScreen() {
 
   const handlePlaceSelect = async (place) => {
     try {
-      // Extraire les données de destination
       const destination = place.structured_formatting 
         ? {
             name: place.structured_formatting.main_text,
@@ -79,14 +73,12 @@ export default function NavigationMainScreen() {
             longitude: place.longitude
           };
 
-      
       setDestination(destination);
       setShowRoutes(true);
     } catch (error) {
       console.error('Error handling place selection:', error);
     }
   };
-
   const handleStartNavigation = (selectedRoute) => {
     try {
       if (!selectedRoute) return;
@@ -111,14 +103,10 @@ export default function NavigationMainScreen() {
     }
   };
 
-  // Modifiez la fonction handleQRScanned pour démarrer directement la navigation
 
 const handleQRScanned = async (scannedLocation) => {
-  console.log("Coordonnées scannées:", scannedLocation);
   
-  // Cas pour les adresses textuelles (searchTerm)
   if (scannedLocation && scannedLocation.searchTerm) {
-    console.log("Recherche de l'adresse:", scannedLocation.searchTerm);
     setQRScannerVisible(false);
     setSearchQuery && setSearchQuery(scannedLocation.searchTerm);
     return;
@@ -126,11 +114,9 @@ const handleQRScanned = async (scannedLocation) => {
   
   if (scannedLocation && scannedLocation.latitude && scannedLocation.longitude) {
     try {
-      // Fermer le scanner QR et afficher l'indicateur de chargement
       setQRScannerVisible(false);
       setLoading(true);
       
-      // Créer un objet destination au format attendu
       const newDestination = {
         latitude: scannedLocation.latitude,
         longitude: scannedLocation.longitude,
@@ -138,20 +124,12 @@ const handleQRScanned = async (scannedLocation) => {
         address: scannedLocation.address || `Coordonnées GPS: ${scannedLocation.latitude}, ${scannedLocation.longitude}`
       };
       
-      // Définir la destination
       setDestination(newDestination);
       
-      // Si le QR code a le flag direct, lancer la navigation directement
       if (scannedLocation.direct) {
         try {
-          // Si un itinéraire est fourni, l'utiliser directement
           if (scannedLocation.route && scannedLocation.route.coordinates) {
-            console.log("Utilisation de la route pré-calculée");
-            
-            // Utiliser directement la route fournie dans les données scannées
             setActiveRoute(scannedLocation.route);
-            
-            // Mettre à jour les informations de route
             setRouteInfo({
               distance: scannedLocation.route.distance || { text: "Distance inconnue", value: 0 },
               duration: scannedLocation.route.duration || { text: "Durée inconnue", value: 0 },
@@ -159,33 +137,22 @@ const handleQRScanned = async (scannedLocation) => {
               remainingDuration: scannedLocation.route.duration
             });
             
-            // Activer immédiatement le mode navigation
             setIsNavigating(true);
-            
-            console.log("Navigation démarrée avec route préchargée vers:", newDestination.name);
           }
-          // Sinon, calculer un itinéraire via l'API
           else {
-            console.log("Calcul d'un itinéraire via l'API");
             
-            // Vérifier que location.coords existe
             if (!location || !location.coords) {
               throw new Error("Impossible d'obtenir votre position actuelle");
             }
-            
-            // Appel au service de navigation directe qui utilise votre API
+          
             const directRoute = await startDirectNavigation(
               location.coords, 
               newDestination,
               avoidTolls
             );
             
-            console.log("Route calculée:", directRoute);
-            
-            // Définir l'itinéraire actif à partir de la réponse de l'API
             setActiveRoute(directRoute);
             
-            // Mettre à jour les informations de route
             setRouteInfo({
               distance: directRoute.distance,
               duration: directRoute.duration,
@@ -193,32 +160,25 @@ const handleQRScanned = async (scannedLocation) => {
               remainingDuration: directRoute.duration
             });
             
-            // Activer le mode navigation
             setIsNavigating(true);
             
-            console.log("Navigation directe démarrée vers:", newDestination.name);
           }
         } catch (error) {
-          console.error("Erreur lors du démarrage de la navigation directe:", error);
           Alert.alert(
             "Erreur de navigation",
             "Impossible de démarrer la navigation directe. Affichage de la prévisualisation d'itinéraire."
           );
-          // En cas d'erreur, afficher la prévisualisation standard
           setShowRoutes(true);
         }
       } else {
-        // Comportement normal pour afficher la prévisualisation
         setShowRoutes(true);
       }
     } catch (error) {
-      console.error("Erreur lors du traitement des coordonnées QR:", error);
       Alert.alert("Erreur", "Impossible de traiter les coordonnées QR");
     } finally {
       setLoading(false);
     }
   } else {
-    console.error("Format de coordonnées invalide ou incomplet");
     Alert.alert("Erreur", "Les coordonnées scannées sont invalides ou incomplètes");
   }
 };
@@ -257,7 +217,7 @@ const handleQRScanned = async (scannedLocation) => {
             heading={heading}
             isNavigating={isNavigating}
             activeRoute={activeRoute}
-            setRouteInfo={setRouteInfo} // Maintenant définie
+            setRouteInfo={setRouteInfo}
             showRoutes={showRoutes}
             routes={routes}
             selectedRoute={selectedRoute}
@@ -272,7 +232,7 @@ const handleQRScanned = async (scannedLocation) => {
             visible={qrScannerVisible}
             onClose={() => setQRScannerVisible(false)}
             onQRScanned={handleQRScanned}
-            setSearchQuery={setSearchQuery} // Ajout de setSearchQuery
+            setSearchQuery={setSearchQuery}
           />
           
           {showRoutes && (
@@ -309,7 +269,7 @@ const handleQRScanned = async (scannedLocation) => {
       )}
       
       <FloatingMenu 
-        style={styles.floatingMenuStyle} // Application du style personnalisé
+        style={styles.floatingMenuStyle}
         onTollPreferenceChange={handleTollPreferenceChange}
         avoidTolls={avoidTolls}
         onCameraLockToggle={isCameraLocked ? unlockCamera : lockCamera}
@@ -326,11 +286,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // Ajout de ce style pour positionner FloatingMenu plus à droite
   floatingMenuStyle: {
     position: 'absolute',
     top: '8%',
-    right: 20, // Position plus à droite
+    right: 20,
     zIndex: 1000,
   },
   loadingOverlay: {
