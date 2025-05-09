@@ -10,7 +10,6 @@ import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
 
 import globalStyles from '../styles/globalStyles';
-import { addToLocalHistory } from '../services/localHistoryService';
 import NavigationScreen from '../components/navigation/NavigationScreen';
 import useMapCamera from '../hooks/useMapCamera';
 import QRScanner from '../components/QRScanner';
@@ -80,7 +79,7 @@ export default function NavigationMainScreen() {
             longitude: place.longitude
           };
 
-      await addToLocalHistory(destination);
+      
       setDestination(destination);
       setShowRoutes(true);
     } catch (error) {

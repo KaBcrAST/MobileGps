@@ -1,6 +1,6 @@
 import axios from 'axios';
+import { API_URL } from '../config/config';
 
-const API_URL = 'https://react-gpsapi.vercel.app/api';
 
 
 // Export the decode polyline utility
@@ -73,7 +73,7 @@ export const navigationService = {
 
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const response = await axios.get(`${API_URL}/speed-limit`, {
+        const response = await axios.get(`${API_URL}/api/speed-limit`, {
           params: { 
             latitude: formattedCoords.latitude,
             longitude: formattedCoords.longitude,

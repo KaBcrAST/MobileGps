@@ -3,8 +3,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '../config/config';
 
-
-//mettre historique ici
 const STORAGE_KEY = 'avoidTolls';
 const DEFAULT_ZOOM = 15;
 const ANIMATION_DURATION = 1000;
@@ -27,8 +25,8 @@ const useNavigationLogic = (location, mapRef) => {
       if (savedPreference !== null) {
         setAvoidTolls(JSON.parse(savedPreference));
       }
-    } catch {
-      // Silently fail and use default value
+    } catch (error) {
+      console.error('Error loading toll preference:', error);
     }
   };
 
@@ -36,7 +34,7 @@ const useNavigationLogic = (location, mapRef) => {
     if (!location?.coords || !destination) return;
 
     try {
-      const response = await axios.get(`${API_URL}`, { //verifier
+      const response = await axios.get(`${API_URL}`, {
         params: {
           origin: ``,
           destination: ``,
@@ -81,7 +79,6 @@ const useNavigationLogic = (location, mapRef) => {
         await fetchRoute();
       }
     } catch {
-      // Silently fail - user can retry
     }
   }, [destination, fetchRoute]);
 
