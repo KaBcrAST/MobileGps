@@ -1,7 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Polyline } from 'react-native-maps';
-import axios from 'axios';
-import { API_URL } from '../../config/config';
 
 const RoutePolylines = ({ 
   showRoutes,
@@ -15,7 +13,7 @@ const RoutePolylines = ({
   fitToCoordinates,
   destination,
   setRouteInfo,
-  setActiveRoute, // ← Ajoutez cette prop pour permettre la mise à jour de l'itinéraire actif
+  setActiveRoute, 
 }) => {
   const adjustedCoordinates = useRef(null);
   const [currentSegment, setCurrentSegment] = useState([]);
@@ -26,22 +24,20 @@ const RoutePolylines = ({
   const isRecalculating = useRef(false);
   const lastRecalculationTime = useRef(0);
   
-  // Initialisation des coordonnées quand activeRoute change
   useEffect(() => {
     if (activeRoute?.coordinates && activeRoute.coordinates.length > 0) {
       adjustedCoordinates.current = activeRoute.coordinates;
       lastClosestPointIndex.current = 0;
-      offRouteCounter.current = 0; // Réinitialiser le compteur de déviation
+      offRouteCounter.current = 0; 
     } else {
       adjustedCoordinates.current = null;
     }
   }, [activeRoute]);
 
-  // Calcul de distance entre deux points géographiques
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
     
-    const R = 6371e3; // Rayon de la Terre en mètres
+    const R = 6371e3;
     const φ1 = lat1 * Math.PI/180;
     const φ2 = lat2 * Math.PI/180;
     const Δφ = (lat2-lat1) * Math.PI/180;
@@ -54,24 +50,20 @@ const RoutePolylines = ({
     return R * c;
   };
 
-  // Fonction pour recalculer l'itinéraire
   const recalculateRoute = useCallback(async () => {
     if (!location?.coords || !destination || isRecalculating.current) {
       return;
     }
 
-    // Empêcher des recalculs trop fréquents (pas plus d'une fois toutes les 10 secondes)
     const now = Date.now();
     if (now - lastRecalculationTime.current < 10000) {
       return;
     }
 
     try {
-      console.log('🔄 Recalcul de l\'itinéraire en cours...');
       isRecalculating.current = true;
       lastRecalculationTime.current = now;
 
-      // Utiliser le service de navigation pour recalculer l'itinéraire
       const newRoute = await startDirectNavigation(
         { latitude: location.coords.latitude, longitude: location.coords.longitude },
         destination,
@@ -79,21 +71,13 @@ const RoutePolylines = ({
       );
 
       if (newRoute && newRoute.coordinates && newRoute.coordinates.length > 0) {
-        console.log('✅ Nouvel itinéraire calculé avec succès');
         
-        // Mettre à jour l'itinéraire actif
         setActiveRoute(newRoute);
-        
-        // Mettre à jour les informations de l'itinéraire
         setRouteInfo(newRoute);
-        
-        // Réinitialiser les compteurs
         lastClosestPointIndex.current = 0;
         offRouteCounter.current = 0;
         
-        // Adapter la vue de la carte pour montrer le nouvel itinéraire
         if (mapRef && mapRef.current && newRoute.coordinates.length > 1) {
-          // Zoomer sur une partie de l'itinéraire devant l'utilisateur
           const relevantCoordinates = newRoute.coordinates.slice(0, Math.min(10, newRoute.coordinates.length));
           
           fitToCoordinates(relevantCoordinates, {
@@ -110,23 +94,17 @@ const RoutePolylines = ({
     }
   }, [location?.coords, destination, activeRoute, setActiveRoute, setRouteInfo, mapRef, fitToCoordinates]);
 
-  // Mise à jour des segments de route en fonction de la position
   useEffect(() => {
     if (!isNavigating || !location?.coords || !adjustedCoordinates.current) {
       setCurrentSegment([]);
       setRemainingSegment([]);
       return;
     }
-
     const routeCoords = adjustedCoordinates.current;
-    
-    // Trouver l'index du point le plus proche sur la route
     let closestPointIndex = lastClosestPointIndex.current;
     let minDistance = Infinity;
     
-    // Optimisation: chercher à partir du dernier point trouvé et quelques points avant
     const searchStart = Math.max(0, closestPointIndex - 5);
-    // Limiter la recherche vers l'avant pour améliorer les performances
     const searchEnd = Math.min(routeCoords.length, closestPointIndex + 30);
     
     for (let i = searchStart; i < searchEnd; i++) {
@@ -143,54 +121,38 @@ const RoutePolylines = ({
       }
     }
     
-    // Mettre à jour l'index du point le plus proche
     lastClosestPointIndex.current = closestPointIndex;
-    
-    // Position actuelle de l'utilisateur
     const userPosition = { 
       latitude: location.coords.latitude, 
       longitude: location.coords.longitude 
     };
-    
-    // Construire le segment actuel (parcouru)
     let actualCurrentSegment = [];
     
-    // Ajouter la position précédente pour une transition fluide
     if (previousUserPosition.current) {
       actualCurrentSegment.push(previousUserPosition.current);
     }
-    
-    // Ajouter la position actuelle
     actualCurrentSegment.push(userPosition);
     previousUserPosition.current = userPosition;
     
-    // Segment actuel: points déjà parcourus + position actuelle
-    setCurrentSegment([
+   setCurrentSegment([
       ...routeCoords.slice(0, closestPointIndex + 1),
       userPosition
     ]);
     
-    // Segment restant: du point actuel jusqu'à la fin
     setRemainingSegment(routeCoords.slice(Math.max(0, closestPointIndex)));
 
-    // NOUVELLE LOGIQUE: Détecter si l'utilisateur s'éloigne trop de l'itinéraire
-    // Si la distance minimale est supérieure à 50 mètres, incrémenter le compteur de déviation
     if (minDistance > 50) {
       offRouteCounter.current++;
       
-      // Si l'utilisateur est hors route pendant plusieurs mises à jour consécutives (environ 3-4 secondes)
       if (offRouteCounter.current > 3) {
-        console.log(`🚗 Déviation détectée! Distance: ${minDistance.toFixed(0)}m`);
         recalculateRoute();
       }
     } else {
-      // Réinitialiser le compteur si l'utilisateur est revenu sur la route
       offRouteCounter.current = 0;
     }
     
   }, [isNavigating, location?.coords?.latitude, location?.coords?.longitude, recalculateRoute]);
 
-  // Rendu des itinéraires en mode sélection
   if (showRoutes && routes && routes.length > 0) {
     return routes.map((route, index) => (
       <Polyline
@@ -207,28 +169,25 @@ const RoutePolylines = ({
     ));
   }
 
-  // Rendu de l'itinéraire actif en mode navigation avec segmentation
   if (isNavigating && activeRoute) {
     return (
       <>
-        {/* Segment parcouru avec une couleur plus vive */}
         {currentSegment.length > 1 && (
           <Polyline
             coordinates={currentSegment}
             strokeWidth={8}
-            strokeColor="#3498db" // Bleu vif
+            strokeColor="#3498db"
             zIndex={3}
             lineCap="round"
             lineJoin="round"
           />
         )}
         
-        {/* Segment restant avec une couleur plus claire */}
         {remainingSegment.length > 1 && (
           <Polyline
             coordinates={remainingSegment}
             strokeWidth={6}
-            strokeColor="#95c9f1" // Bleu plus clair
+            strokeColor="#95c9f1"
             zIndex={2}
             lineCap="round"
             lineJoin="round"

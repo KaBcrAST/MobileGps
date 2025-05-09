@@ -2,25 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { API_URL } from '../../config/config';
 
-const API_URL = 'https://react-gpsapi.vercel.app/api/search';
 const STORAGE_KEY = '@favorite_addresses';
 
 export default function useSearchBarLogic(onPlaceSelect) {
-  // États pour la recherche
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [predictions, setPredictions] = useState([]);
-  
-  // États pour les animations
-  const animatedPosition = useRef(new Animated.Value(0)).current;
+    const animatedPosition = useRef(new Animated.Value(0)).current;
   const bottomMenuPosition = useRef(new Animated.Value(-300)).current;
   const inputRef = useRef(null);
-  
-  // États pour les favoris
   const [history, setHistory] = useState([]);
-  
-  // États pour le modal d'édition
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editAddress, setEditAddress] = useState('');
@@ -28,13 +21,11 @@ export default function useSearchBarLogic(onPlaceSelect) {
   const [editAddressPredictions, setEditAddressPredictions] = useState([]);
   const [isAddressInputFocused, setIsAddressInputFocused] = useState(false);
 
-  // Charger les favoris au démarrage
   useEffect(() => {
     loadFavorites();
     bottomMenuPosition.setValue(-300);
   }, []);
 
-  // Fonction pour charger les favoris
   const loadFavorites = async () => {
     try {
       const savedFavorites = await AsyncStorage.getItem(STORAGE_KEY);
@@ -42,7 +33,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
       if (savedFavorites) {
         setHistory(JSON.parse(savedFavorites));
       } else {
-        // Valeurs par défaut
         const defaultFavorites = [
           { id: 1, name: 'Domicile', address: '123 Rue Principale', icon: 'home', latitude: 0, longitude: 0 },
           { id: 2, name: 'Travail', address: '456 Avenue des Affaires', icon: 'work', latitude: 0, longitude: 0 }
@@ -55,7 +45,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     }
   };
 
-  // Sauvegarder les favoris
   const saveFavorites = async (updatedFavorites) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedFavorites));
@@ -64,7 +53,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     }
   };
 
-  // Gérer l'animation de focus/blur
   const toggleSearchPosition = (focused) => {
     setIsSearchFocused(focused);
     
@@ -86,7 +74,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     }
   };
 
-  // Fonction pour rechercher des adresses
   const fetchAddressPredictions = async (query, setResults) => {
     if (!query.trim()) {
       setResults([]);
@@ -94,36 +81,32 @@ export default function useSearchBarLogic(onPlaceSelect) {
     }
     
     try {
-      const { data: predictions } = await axios.get(`${API_URL}/places`, {
+      const { data: predictions } = await axios.get(`${API_URL}/api/search/places`, {
         params: { query }
       });
       setResults(predictions);
     } catch (error) {
-      console.error('Erreur lors de la recherche d\'adresses:', error);
       setResults([]);
     }
   };
 
-  // Recherche principale
   const handleSearch = (query) => {
     setSearchQuery(query);
     fetchAddressPredictions(query, setPredictions);
   };
 
-  // Recherche dans le modal d'édition
   const handleEditAddressSearch = (query) => {
     setEditAddress(query);
     fetchAddressPredictions(query, setEditAddressPredictions);
   };
 
-  // Sélection d'un lieu dans la recherche
   const handleSelectPlace = async (prediction) => {
     try {
       setSearchQuery(prediction.description);
       setPredictions([]);
       toggleSearchPosition(false);
 
-      const { data: details } = await axios.get(`${API_URL}/places/${prediction.place_id}`);
+      const { data: details } = await axios.get(`${API_URL}/api/search/places/${prediction.place_id}`);
       
       if (details?.geometry?.location) {
         const destination = {
@@ -141,14 +124,13 @@ export default function useSearchBarLogic(onPlaceSelect) {
     }
   };
 
-  // Sélection d'une prédiction d'adresse dans le modal
   const handleSelectAddressPrediction = async (prediction) => {
     try {
       setEditAddress(prediction.description);
       setEditAddressPredictions([]);
       setIsAddressInputFocused(false);
 
-      const { data: details } = await axios.get(`${API_URL}/places/${prediction.place_id}`);
+      const { data: details } = await axios.get(`${API_URL}/api/search/places/${prediction.place_id}`);
       
       if (details?.geometry?.location) {
         setSelectedItem(prev => ({
@@ -163,7 +145,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     }
   };
 
-  // Sélection d'un favori
   const handleSelectHistoryItem = (item) => {
     if (!item.latitude || !item.longitude) {
       console.warn("Cet emplacement n'a pas de coordonnées GPS");
@@ -180,7 +161,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     toggleSearchPosition(false);
   };
 
-  // Ouvrir le modal d'édition
   const openEditModal = (item) => {
     setSelectedItem(item);
     setEditTitle(item.name);
@@ -190,7 +170,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     setModalVisible(true);
   };
 
-  // Ajouter un nouveau favori
   const addNewFavorite = () => {
     setSelectedItem({ id: Date.now(), name: '', address: '', icon: 'place', latitude: 0, longitude: 0 });
     setEditTitle('');
@@ -200,7 +179,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     setModalVisible(true);
   };
   
-  // Sauvegarder un favori
   const saveAddress = async () => {
     try {
       if (!editAddress.trim()) {
@@ -229,20 +207,17 @@ export default function useSearchBarLogic(onPlaceSelect) {
       await saveFavorites(updatedHistory);
       setModalVisible(false);
       
-      console.log('Favori sauvegardé avec succès!');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde du favori:', error);
     }
   };
 
-  // Handler pour le changement de layout
   const handleLayoutChange = () => {
     if (inputRef.current && isSearchFocused) {
       inputRef.current.focus();
     }
   };
 
-  // Fermer la recherche et le menu
   const closeSearchAndMenu = () => {
     toggleSearchPosition(false);
     if (inputRef.current) {
@@ -251,11 +226,10 @@ export default function useSearchBarLogic(onPlaceSelect) {
   };
 
   return {
-    // États
     isSearchFocused,
     searchQuery,
     predictions,
-    setPredictions, // Assurez-vous que setPredictions est inclus
+    setPredictions,
     animatedPosition,
     bottomMenuPosition,
     inputRef,
@@ -267,7 +241,6 @@ export default function useSearchBarLogic(onPlaceSelect) {
     editAddressPredictions,
     isAddressInputFocused,
     
-    // Handlers
     handleSearch,
     handleSelectPlace,
     toggleSearchPosition,
@@ -281,7 +254,7 @@ export default function useSearchBarLogic(onPlaceSelect) {
     closeSearchAndMenu,
     setModalVisible,
     setEditTitle,
-    setSearchQuery, // Assurez-vous que setSearchQuery est exporté ici
+    setSearchQuery, 
     handleLayoutChange
   };
 }

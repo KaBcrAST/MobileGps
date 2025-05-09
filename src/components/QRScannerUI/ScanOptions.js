@@ -26,7 +26,6 @@ const ScanOptions = ({ onTakePicture, onPickImage, isProcessing }) => {
         onTakePicture(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("Erreur lors de la prise de photo:", error);
       Alert.alert("Erreur", "Impossible de prendre la photo: " + error.message);
     }
   };
@@ -51,7 +50,6 @@ const ScanOptions = ({ onTakePicture, onPickImage, isProcessing }) => {
         onPickImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("Erreur lors de la sélection d'image:", error);
       Alert.alert("Erreur", "Impossible de sélectionner l'image: " + error.message);
     }
   };

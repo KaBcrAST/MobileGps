@@ -39,7 +39,6 @@ const EditFavoriteModal = ({
           />
           
           <View style={styles.modalBody}>
-            {/* Champ pour le titre du favori */}
             <Text style={styles.modalLabel}>Nom du favori:</Text>
             <TextInput
               style={styles.modalInput}
@@ -50,7 +49,6 @@ const EditFavoriteModal = ({
               autoCapitalize="sentences"
             />
             
-            {/* Champ pour l'adresse avec autocomplétion */}
             <Text style={styles.modalLabel}>Adresse:</Text>
             <TextInput
               style={[
@@ -64,7 +62,6 @@ const EditFavoriteModal = ({
               onFocus={onAddressInputFocus}
             />
             
-            {/* Résultats d'autocomplétion pour l'adresse */}
             {isAddressInputFocused && editAddressPredictions.length > 0 && (
               <AddressPredictions 
                 predictions={editAddressPredictions} 
@@ -80,7 +77,6 @@ const EditFavoriteModal = ({
   );
 };
 
-// Sous-composant pour l'en-tête du modal
 const ModalHeader = ({ title, onClose }) => (
   <View style={styles.modalHeader}>
     <Text style={styles.modalTitle}>{title}</Text>
@@ -90,7 +86,6 @@ const ModalHeader = ({ title, onClose }) => (
   </View>
 );
 
-// Sous-composant pour les prédictions d'adresse
 const AddressPredictions = ({ predictions, onSelect }) => (
   <ScrollView style={styles.modalPredictionsContainer}>
     {predictions.map((prediction) => (
@@ -106,7 +101,6 @@ const AddressPredictions = ({ predictions, onSelect }) => (
   </ScrollView>
 );
 
-// Sous-composant pour les boutons du modal
 const ModalButtons = ({ onCancel, onSave }) => (
   <View style={styles.modalButtonContainer}>
     <TouchableOpacity 

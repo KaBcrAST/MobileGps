@@ -35,7 +35,6 @@ const FavoritesMenu = ({
           />
         ))}
         
-        {/* Bouton pour ajouter un nouveau favori */}
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={onAddNewFavorite}
@@ -48,7 +47,6 @@ const FavoritesMenu = ({
   );
 };
 
-// Sous-composant pour chaque favori
 const FavoriteItem = ({ item, onSelect, onEdit }) => (
   <TouchableOpacity
     style={styles.historyItem}

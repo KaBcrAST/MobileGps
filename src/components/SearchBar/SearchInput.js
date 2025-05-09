@@ -9,15 +9,13 @@ const SearchInput = ({
   onFocus, 
   onClear 
 }) => {
-  // Ajoutons une fonction sécurisée pour gérer le nettoyage du texte
   const handleClear = () => {
     if (typeof onClear === 'function') {
       onClear();
     } else if (typeof onChangeText === 'function') {
-      // Fallback au cas où onClear n'est pas défini
       onChangeText('');
     } else {
-      console.warn("Ni onClear ni onChangeText ne sont des fonctions valides");
+      console.warn('onClear or onChangeText is not a function');
     }
   };
 

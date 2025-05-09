@@ -8,12 +8,10 @@ const ArrivalNotification = ({
   onClose, 
   onReturnToHomeScreen 
 }) => {
-  // Animation pour l'entrée du composant
   const slideAnimation = React.useRef(new Animated.Value(400)).current;
 
   useEffect(() => {
     if (visible) {
-      // Animation d'entrée
       Animated.spring(slideAnimation, {
         toValue: 0,
         friction: 8,

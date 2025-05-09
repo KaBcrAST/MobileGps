@@ -7,7 +7,7 @@ import BlockInfo from '../BlockInfo';
 import NavigationInstruction from './NavigationInstruction';
 import ArrivalNotification from './ArrivalNotification';
 
-const ARRIVAL_THRESHOLD = 50; // Distance en mètres considérée comme "arrivée"
+const ARRIVAL_THRESHOLD = 50;
 
 const NavigationScreen = ({
   mapRef,
@@ -23,13 +23,11 @@ const NavigationScreen = ({
   const [showArrival, setShowArrival] = useState(false);
   const [hasShownArrival, setHasShownArrival] = useState(false);
 
-  // Vérifier si l'utilisateur est arrivé à destination
   useEffect(() => {
     if (!location?.coords || !destination || hasShownArrival) return;
 
-    // Calculer la distance entre la position actuelle et la destination
     const calculateDistance = (lat1, lon1, lat2, lon2) => {
-      const R = 6371e3; // Rayon de la terre en mètres
+      const R = 6371e3;
       const φ1 = lat1 * Math.PI / 180;
       const φ2 = lat2 * Math.PI / 180;
       const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -40,7 +38,7 @@ const NavigationScreen = ({
               Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
               
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // Distance en mètres
+      return R * c;
     };
 
     const distance = calculateDistance(
@@ -50,28 +48,22 @@ const NavigationScreen = ({
       destination.longitude
     );
 
-    // Si la distance est inférieure au seuil, considérer que l'utilisateur est arrivé
     if (distance <= ARRIVAL_THRESHOLD) {
       setShowArrival(true);
       setHasShownArrival(true);
     }
   }, [location, destination, hasShownArrival]);
 
-  // Mise à jour de la caméra
   useEffect(() => {
-    // Cherchez ici des mises à jour de caméra basées sur la position
     if (mapRef?.current && location?.coords) {
-      // ...
     }
   }, [location]);
 
-  // Gérer la redirection vers l'écran d'accueil
   const handleReturnToHome = () => {
     setShowArrival(false);
     onEndNavigation();
   };
 
-  // Gérer la fermeture de la notification sans quitter la navigation
   const handleCloseNotification = () => {
     setShowArrival(false);
   };
@@ -93,7 +85,6 @@ const NavigationScreen = ({
         destination={destination}
       />
 
-      {/* Infos de vitesse et limite */}
       <View style={styles.infoContainer}>
         <BlockInfo 
           speed={speed}
@@ -105,7 +96,6 @@ const NavigationScreen = ({
         <SpeedLimitSign location={location} />
       </View>
 
-      {/* Infos de trafic */}
       {activeRoute?.traffic?.hasSlowdowns && (
         <View style={styles.trafficAlertContainer}>
           <Ionicons name="alert-circle" size={20} color="#FF8800" />
@@ -115,7 +105,6 @@ const NavigationScreen = ({
         </View>
       )}
 
-      {/* Notification d'arrivée */}
       <ArrivalNotification 
         visible={showArrival}
         destinationName={destination?.name || "Destination"}
@@ -138,7 +127,7 @@ const styles = StyleSheet.create({
   },
   trafficAlertContainer: {
     position: 'absolute',
-    top: 120, // Ajustez selon votre layout
+    top: 120,
     left: 20,
     right: 20,
     backgroundColor: 'rgba(255, 248, 224, 0.9)',
