@@ -1,25 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Modal, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Importer les fonctions du service audio
+import { useNavigation } from '@react-navigation/native';
 import { isSoundEnabled, setSoundEnabled } from '../services/trackService';
+import FavoritesListComponent from './FavoritesListComponent';
 
-// Clé pour stocker la préférence sonore
 const SOUND_ENABLED_KEY = 'soundEnabled';
+const FAVORITES_AUTO_SYNC_KEY = 'favoritesAutoSync';
+const FAVORITES_SORT_BY_KEY = 'favoritesSortBy';
 
-const NavigationSettings = ({ onTollPreferenceChange }) => {
+const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) => {
+  const navigation = useNavigation();
+  
   const [isTollDropdownOpen, setIsTollDropdownOpen] = useState(false);
   const [isSoundDropdownOpen, setIsSoundDropdownOpen] = useState(false);
+  const [isFavoritesDropdownOpen, setIsFavoritesDropdownOpen] = useState(false);
   const [avoidTolls, setAvoidTolls] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(true);
+  const [favoritesAutoSync, setFavoritesAutoSync] = useState(true);
+  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
 
-  // Charger les préférences au démarrage
   useEffect(() => {
     loadTollPreference();
     loadSoundPreference();
+    loadFavoritesPreferences();
   }, []);
 
   const loadTollPreference = async () => {
@@ -35,7 +41,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
 
   const loadSoundPreference = async () => {
     try {
-      // Utiliser la fonction du service pour vérifier l'état sonore
       const isEnabled = await isSoundEnabled();
       setSoundEnabledState(isEnabled);
     } catch (error) {
@@ -43,27 +48,41 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     }
   };
 
+  const loadFavoritesPreferences = async () => {
+    try {
+      const autoSync = await AsyncStorage.getItem(FAVORITES_AUTO_SYNC_KEY);
+      if (autoSync !== null) {
+        setFavoritesAutoSync(JSON.parse(autoSync));
+      }
+    } catch (error) {
+      console.error('Error loading favorites preferences:', error);
+    }
+  };
+
   const handleTollPress = () => {
     setIsTollDropdownOpen(!isTollDropdownOpen);
-    // Fermer l'autre menu si ouvert
-    if (!isTollDropdownOpen && isSoundDropdownOpen) {
+    if (!isTollDropdownOpen) {
       setIsSoundDropdownOpen(false);
+      setIsFavoritesDropdownOpen(false);
     }
   };
 
   const handleSoundPress = () => {
     setIsSoundDropdownOpen(!isSoundDropdownOpen);
-    // Fermer l'autre menu si ouvert
-    if (!isSoundDropdownOpen && isTollDropdownOpen) {
+    if (!isSoundDropdownOpen) {
       setIsTollDropdownOpen(false);
+      setIsFavoritesDropdownOpen(false);
     }
+  };
+
+  const handleFavoritesPress = () => {
+    setShowFavoritesModal(true);
   };
 
   const handleTollToggle = async (value) => {
     setAvoidTolls(value);
     try {
       await AsyncStorage.setItem('avoidTolls', JSON.stringify(value));
-      // Notify parent component about the change
       if (onTollPreferenceChange) {
         onTollPreferenceChange(value);
       }
@@ -74,10 +93,7 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
 
   const handleSoundToggle = async (value) => {
     try {
-      // Mettre à jour l'état local
       setSoundEnabledState(value);
-      
-      // Utiliser la fonction du service pour définir l'état sonore
       await setSoundEnabled(value);
       
       console.log(`🔊 Sons ${value ? 'activés' : 'désactivés'}`);
@@ -86,11 +102,67 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     }
   };
 
+  const handleFavoritesAutoSyncToggle = async (value) => {
+    try {
+      setFavoritesAutoSync(value);
+      await AsyncStorage.setItem(FAVORITES_AUTO_SYNC_KEY, JSON.stringify(value));
+      
+      console.log(`🌟 Synchronisation automatique des favoris ${value ? 'activée' : 'désactivée'}`);
+    } catch (error) {
+      console.error('Error saving favorites auto sync preference:', error);
+    }
+  };
+
+  const handleSelectRoute = (routeData) => {
+    console.log('Itinéraire sélectionné:', routeData);
+    
+    setShowFavoritesModal(false);
+    
+    if (!routeData || !routeData.route) {
+      console.error("Données d'itinéraire incomplètes");
+      Alert.alert("Erreur", "Données d'itinéraire incomplètes");
+      return;
+    }
+    
+    if (onRouteSelected) {
+      console.log("Utilisation du callback pour la sélection de route");
+      onRouteSelected(routeData);
+      return;
+    }
+    
+    try {
+      console.log("Utilisation de la navigation directe");
+      navigation.navigate('Map', {
+        routeData: routeData,
+        destination: {
+          latitude: routeData.latitude,
+          longitude: routeData.longitude,
+          name: routeData.name,
+          address: routeData.address
+        },
+        startNavigation: true,
+        showRoutePreview: false,
+        navigationMode: true,
+        autoStart: true
+      });
+    } catch (error) {
+      console.error("Erreur de navigation:", error);
+      Alert.alert("Erreur", "Impossible de naviguer vers cette destination");
+    }
+  };
+
+  const handleSyncFavorites = () => {
+    setShowFavoritesModal(true);
+  };
+
+  const handleCloseFavoritesModal = () => {
+    setShowFavoritesModal(false);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>Paramètres Navigation</Text>
       
-      {/* Section Péages */}
       <View>
         <TouchableOpacity 
           style={styles.settingItem}
@@ -126,7 +198,6 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
         )}
       </View>
       
-      {/* Section Sons */}
       <View style={styles.menuSeparator}>
         <TouchableOpacity 
           style={styles.settingItem}
@@ -165,6 +236,45 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
           </View>
         )}
       </View>
+
+      <View style={styles.menuSeparator}>
+        <TouchableOpacity 
+          style={styles.settingItem}
+          onPress={handleFavoritesPress}
+        >
+          <View style={styles.settingContent}>
+            <Ionicons name="star-outline" size={24} color="#333" />
+            <Text style={styles.settingText}>Mes favoris</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#666" />
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        visible={showFavoritesModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleCloseFavoritesModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Mes favoris</Text>
+            <TouchableOpacity 
+              onPress={handleCloseFavoritesModal}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          {showFavoritesModal && (
+            <FavoritesListComponent 
+              onSelectRoute={handleSelectRoute}
+              onClose={handleCloseFavoritesModal}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -218,7 +328,44 @@ const styles = StyleSheet.create({
     marginTop: 5,
     borderTopWidth: 0.5,
     borderTopColor: '#e0e0e0',
-  }
+  },
+  favoriteAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: '#e0e0e0',
+    marginTop: 4,
+  },
+  favoriteActionText: {
+    fontSize: 15,
+    color: '#2196F3',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    marginTop: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalContent: {
+    flex: 1,
+  },
 });
 
 export default NavigationSettings;

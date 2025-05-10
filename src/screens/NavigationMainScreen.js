@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
 import Map from '../components/MapDisplay';
 import SearchBar from '../components/SearchBar/SearchBar';
@@ -16,14 +16,14 @@ import useMapCamera from '../hooks/useMapCamera';
 import QRScanner from '../components/QRScanner';
 import { startDirectNavigation } from '../services/navigationService';
 
-export default function NavigationMainScreen() {
+export default function NavigationMainScreen({ navigation, route }) {
   const mapRef = useRef(null);
   const { location, region, speed } = useLocation(mapRef);
   const { 
     destination, 
     setDestination, 
     routeInfo, 
-    setRouteInfo, // Ajout de setRouteInfo ici
+    setRouteInfo,
     isNavigating,
     setIsNavigating,
     startNavigation,
@@ -42,8 +42,14 @@ export default function NavigationMainScreen() {
     resetCameraView,
     focusOnLocation,
     fitToCoordinates,
-    temporarilyDisableTracking
-  } = useMapCamera(mapRef, location, heading, isNavigating);
+    temporarilyDisableTracking,
+    forceInitialLowView, // Assurez-vous que cette fonction est importée du hook
+    NORMAL_ALTITUDE,
+    isPreviewMode
+  } = useMapCamera(mapRef, location, heading, isNavigating, {
+    destination, 
+    coordinates: activeRoute?.coordinates 
+  });
   
   const [showRoutes, setShowRoutes] = useState(false);
   const [routes, setRoutes] = useState([]); // Ajout de routes state
@@ -227,6 +233,72 @@ const handleQRScanned = async (scannedLocation) => {
   const openQRScanner = () => {
     setQRScannerVisible(true);
   };
+
+  // Dans votre fonction receveuse, assurez-vous de gérer correctement les données de favoris
+  const handleIncomingRouteData = (routeData) => {
+    console.log("Données de route reçues pour navigation:", routeData);
+    
+    try {
+      // Vérifier que nous avons bien les données nécessaires
+      if (!routeData || !routeData.route || !routeData.latitude || !routeData.longitude) {
+        console.error("Données de route incomplètes:", routeData);
+        return;
+      }
+      
+      // 1. Définir la destination
+      const newDestination = {
+        latitude: routeData.latitude,
+        longitude: routeData.longitude,
+        name: routeData.name || "Destination",
+        address: routeData.address || `Coordonnées GPS: ${routeData.latitude}, ${routeData.longitude}`
+      };
+      setDestination(newDestination);
+      
+      // 2. Définir l'itinéraire actif avec toutes les données nécessaires
+      const fullRoute = {
+        ...routeData.route,
+        destination: newDestination
+      };
+      setActiveRoute(fullRoute);
+      
+      // 3. Mettre à jour les informations de route
+      setRouteInfo({
+        distance: routeData.route.distance,
+        duration: routeData.route.duration,
+        steps: routeData.route.steps || []
+      });
+      
+      // 4. Activer le mode navigation
+      setIsNavigating(true);
+      
+      // 5. Réinitialiser les routes et sélections
+      setShowRoutes(false);
+      setSelectedRoute(0);
+      
+      console.log("Navigation directe activée pour:", newDestination.name);
+      
+      // 6. Utiliser lockCamera au lieu de forceInitialLowView
+      setTimeout(() => {
+        // Appeler uniquement lockCamera qui est garanti d'être disponible
+        lockCamera && lockCamera();
+      }, 500);
+    } catch (error) {
+      console.error("Erreur lors du traitement des données de navigation:", error);
+      Alert.alert(
+        "Erreur de navigation",
+        "Impossible de démarrer la navigation. Veuillez réessayer.",
+        [{ text: "OK" }]
+      );
+    }
+  };
+  
+  // Ajouter un effet pour traiter les paramètres de route s'ils arrivent via navigation
+  useEffect(() => {
+    if (route.params?.routeData && route.params?.startNavigation) {
+      console.log("Navigation reçue via route.params");
+      handleIncomingRouteData(route.params.routeData);
+    }
+  }, [route.params]);
 
   if (!region) return null;
 

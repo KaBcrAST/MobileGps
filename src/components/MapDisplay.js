@@ -164,10 +164,23 @@ const Map = ({
     setIsMapReady(true);
     setLoading(false);
     
-    // Forcer uniquement la vue initiale basse après un court délai
+    // Vérifier si forceInitialLowView existe avant de l'appeler
     setTimeout(() => {
-      if (forceInitialLowView) {
+      if (typeof forceInitialLowView === 'function') {
         forceInitialLowView();
+      } else {
+        // Fallback en cas d'absence de forceInitialLowView
+        if (mapRef?.current && location?.coords) {
+          mapRef.current.animateCamera({
+            center: {
+              latitude: location.coords.latitude,
+              longitude: location.coords.longitude,
+            },
+            pitch: 45,
+            altitude: 300, // Valeur par défaut
+            zoom: 16
+          }, { duration: 500 });
+        }
       }
     }, 500);
   };
