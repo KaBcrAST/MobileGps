@@ -176,7 +176,7 @@ const Map = ({
               latitude: location.coords.latitude,
               longitude: location.coords.longitude,
             },
-            pitch: 45,
+            pitch: 65,
             altitude: 300, // Valeur par défaut
             zoom: 16
           }, { duration: 500 });

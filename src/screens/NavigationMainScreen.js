@@ -23,7 +23,7 @@ export default function NavigationMainScreen({ navigation, route }) {
     destination, 
     setDestination, 
     routeInfo, 
-    setRouteInfo,
+    setRouteInfo, // Ajout de setRouteInfo ici
     isNavigating,
     setIsNavigating,
     startNavigation,
@@ -43,9 +43,7 @@ export default function NavigationMainScreen({ navigation, route }) {
     focusOnLocation,
     fitToCoordinates,
     temporarilyDisableTracking,
-    forceInitialLowView, // Assurez-vous que cette fonction est importée du hook
-    NORMAL_ALTITUDE,
-    isPreviewMode
+    forceInitialLowView // Ajouté ici
   } = useMapCamera(mapRef, location, heading, isNavigating, {
     destination, 
     coordinates: activeRoute?.coordinates 
@@ -277,9 +275,10 @@ const handleQRScanned = async (scannedLocation) => {
       
       console.log("Navigation directe activée pour:", newDestination.name);
       
-      // 6. Utiliser lockCamera au lieu de forceInitialLowView
+      // 6. Forcer un délai court pour garantir que tous les états sont mis à jour
       setTimeout(() => {
-        // Appeler uniquement lockCamera qui est garanti d'être disponible
+        // Forcer une mise à jour de la caméra et des affichages
+        forceInitialLowView && forceInitialLowView();
         lockCamera && lockCamera();
       }, 500);
     } catch (error) {

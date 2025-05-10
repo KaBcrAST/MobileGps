@@ -198,35 +198,35 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
       animateCameraSafely, offsetCoordinates, isAndroid]);
 
   const forceInitialLowView = useCallback(() => {
-    if (!mapRef?.current || !location?.coords) return;
-    if (initialViewApplied.current) return; 
+    if (!mapRef?.current || !location?.coords) return false;
     
     try {
       const directionToUse = heading || calculatedHeading.current || 0;
       
       blockAutoUpdates.current = true;
       
-      mapRef.current.setCamera({
+      mapRef.current.animateCamera({
         center: {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
-        pitch: NORMAL_PITCH,
+        pitch: NAVIGATION_PITCH,
         heading: directionToUse,
-        altitude: PREVIEW_ALTITUDE,
+        altitude: NAVIGATION_ALTITUDE,
         zoom: isAndroid ? 18.5 : 18
-      });
-      
-      initialViewApplied.current = true;
+      }, { duration: 500 });
       
       // Réactiver les mises à jour automatiques après un délai
       setTimeout(() => {
         blockAutoUpdates.current = false;
       }, 2000);
+      
+      return true;
     } catch (error) {
       console.error("Initial camera setting failed", error);
+      return false;
     }
-  }, [mapRef, location?.coords, heading, isAndroid, NORMAL_PITCH, PREVIEW_ALTITUDE]);
+  }, [mapRef, location?.coords, heading, NAVIGATION_PITCH, NAVIGATION_ALTITUDE, isAndroid]);
 
   useEffect(() => {
     forceInitialLowView();
@@ -294,7 +294,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     lockCamera,
     resetCameraView,
     focusOnLocation,
-    forceInitialLowView,
+    forceInitialLowView,  // S'assurer que cette fonction est bien exportée
     fitToCoordinates,
     temporarilyDisableTracking,
     setPreviewMode,

@@ -131,7 +131,7 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
         false // Ne pas éviter les péages
       );
       
-      // Préparer les données exactement comme le QRScanner le fait
+      // Préparer les données pour la navigation
       const resultData = {
         ...destination,
         route: route,
@@ -143,12 +143,27 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
       
       console.log('Itinéraire direct reçu avec succès');
       
-      // IMPORTANT: Appeler onSelectRoute pour passer les données au composant parent
+      // SOLUTION: Utiliser deux approches alternatives selon le contexte
+      
+      // Option 1: Si onSelectRoute est défini, utiliser le callback directement
       if (onSelectRoute) {
+        console.log("Utilisation du callback onSelectRoute");
         onSelectRoute(resultData);
+      } 
+      // Option 2: Sinon, utiliser la navigation vers l'écran Map avec les params
+      else if (navigation) {
+        console.log("Navigation vers l'écran Map avec params");
+        navigation.navigate('Map', {
+          routeData: resultData,
+          startNavigation: true,
+          showRoutePreview: false
+        });
+      }
+      else {
+        throw new Error("Aucune méthode de navigation disponible");
       }
       
-      // Fermer le panneau des favoris
+      // Fermer le panneau des favoris dans tous les cas
       if (onClose) {
         onClose();
       }
