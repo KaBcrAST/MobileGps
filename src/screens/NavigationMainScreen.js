@@ -1,21 +1,28 @@
-import React, { useRef, useState } from 'react';
-import { View, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
-import Map from '../components/MapDisplay';
-import SearchBar from '../components/SearchBar/SearchBar';
-import BlockInfo from '../components/BlockInfo';
-import FloatingMenu from '../components/FloatingMenu';
-import ReportMenu from '../components/ReportMenu';
-import RoutePreview from '../components/RoutePreview/RoutePreview';
+import React, { useRef } from 'react';
+import { View } from 'react-native';
+
+// Hooks personnalisés
 import useLocation from '../hooks/useLocation';
 import useNavigationLogic from '../hooks/useNavigationLogic';
-import globalStyles from '../styles/globalStyles';
-import NavigationScreen from '../components/navigation/NavigationScreen';
 import useMapCamera from '../hooks/useMapCamera';
-import QRScanner from '../components/QRScanner';
-import { startDirectNavigation } from '../services/navigationService';
+import useRouteManager from '../hooks/useRouteManager';
+import useQRHandler from '../hooks/useQRHandler';
+import useNavigationController from '../hooks/useNavigationController';
 
+// Services
+import { formatDestination } from '../services/placeService';
+
+// Interface UI
+import NavigationUI from '../components/navigation/NavigationUI';
+
+/**
+ * Écran principal de navigation
+ */
 export default function NavigationMainScreen() {
+  // Référence à la carte
   const mapRef = useRef(null);
+  
+  // Hooks de base
   const { location, region, speed } = useLocation(mapRef);
   const { 
     destination, 
@@ -32,276 +39,153 @@ export default function NavigationMainScreen() {
     setActiveRoute
   } = useNavigationLogic(location, mapRef);
   
+  // Hook de gestion de caméra
   const {
     isCameraLocked, 
     unlockCamera, 
     lockCamera,
     fitToCoordinates,
-    temporarilyDisableTracking
-  } = useMapCamera(mapRef, location, heading, isNavigating);
+    temporarilyDisableTracking,
+    isPreviewMode,
+    NORMAL_ALTITUDE,
+    forceInitialLowView,
+    handleEndNavigation
+  } = useMapCamera(mapRef, location, heading, isNavigating, {
+    destination,
+    coordinates: activeRoute?.coordinates
+  });
   
-  const [showRoutes, setShowRoutes] = useState(false);
-  const [routes, setRoutes] = useState([]);
-  const [selectedRoute, setSelectedRoute] = useState(0);
-  const [qrScannerVisible, setQRScannerVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  // Hook de gestion des routes
+  const {
+    routes,
+    setRoutes,
+    showRoutes,
+    setShowRoutes,
+    selectedRoute,
+    selectRoute,
+    clearRoutes
+  } = useRouteManager();
   
+  // Hook de contrôle de navigation
+  const {
+    setupNavigationCamera,
+    handleStartNavigation,
+    handleEndNavigationComplete
+  } = useNavigationController({
+    mapRef,
+    location,
+    heading,
+    endNavigation,
+    handleEndNavigation,
+    NORMAL_ALTITUDE
+  });
+  
+  // Hook de gestion des QR codes
+  const {
+    qrScannerVisible,
+    loading,
+    searchQuery,
+    setSearchQuery,
+    handleQRScanned,
+    openQRScanner,
+    closeQRScanner,
+    setLoading
+  } = useQRHandler({
+    location,
+    avoidTolls,
+    setDestination,
+    setActiveRoute,
+    setRouteInfo,
+    setIsNavigating,
+    setShowRoutes
+  });
+  
+  // Gestionnaires d'événements
   const onRouteSelect = (route) => {
-    setSelectedRoute(route.index || 0);
-    if (routes && routes.length > 0) {
-      setRoutes(routes.map((r, i) => ({
-        ...r,
-        isSelected: i === (route.index || 0)
-      })));
+    selectRoute(route);
+    
+    // Si le format de route est différent, mettre à jour les routes
+    if (route.routes) {
+      setRoutes(route.routes);
     }
   };
-
-  const handlePlaceSelect = async (place) => {
+  
+  const onPlaceSelect = async (place) => {
     try {
-      const destination = place.structured_formatting 
-        ? {
-            name: place.structured_formatting.main_text,
-            address: place.structured_formatting.secondary_text,
-            latitude: place.geometry?.location?.lat,
-            longitude: place.geometry?.location?.lng
-          }
-        : {
-            name: place.name,
-            address: place.address,
-            latitude: place.latitude,
-            longitude: place.longitude
-          };
-
-      setDestination(destination);
+      const formattedDestination = formatDestination(place);
+      setDestination(formattedDestination);
       setShowRoutes(true);
     } catch (error) {
       console.error('Error handling place selection:', error);
     }
   };
-  const handleStartNavigation = (selectedRoute) => {
+  
+  const onStartNavigation = (routeData) => {
     try {
-      if (!selectedRoute) return;
+      const preparedRoute = handleStartNavigation(routeData);
       
-      setActiveRoute(selectedRoute);
-      setIsNavigating(true);
-      setShowRoutes(false);
-      
-      if (selectedRoute.coordinates && fitToCoordinates) {
-        fitToCoordinates(selectedRoute.coordinates, {
-          edgePadding: {
-            top: 100,
-            right: 50,
-            bottom: 100,
-            left: 50
-          },
-          animated: true
-        });
+      if (preparedRoute) {
+        setActiveRoute(preparedRoute);
+        setIsNavigating(true);
+        setShowRoutes(false);
       }
     } catch (error) {
       console.warn('Error starting navigation:', error);
     }
   };
 
-
-const handleQRScanned = async (scannedLocation) => {
-  
-  if (scannedLocation && scannedLocation.searchTerm) {
-    setQRScannerVisible(false);
-    setSearchQuery && setSearchQuery(scannedLocation.searchTerm);
-    return;
-  }
-  
-  if (scannedLocation && scannedLocation.latitude && scannedLocation.longitude) {
-    try {
-      setQRScannerVisible(false);
-      setLoading(true);
-      
-      const newDestination = {
-        latitude: scannedLocation.latitude,
-        longitude: scannedLocation.longitude,
-        name: scannedLocation.name || "Destination QR",
-        address: scannedLocation.address || `Coordonnées GPS: ${scannedLocation.latitude}, ${scannedLocation.longitude}`
-      };
-      
-      setDestination(newDestination);
-      
-      if (scannedLocation.direct) {
-        try {
-          if (scannedLocation.route && scannedLocation.route.coordinates) {
-            setActiveRoute(scannedLocation.route);
-            setRouteInfo({
-              distance: scannedLocation.route.distance || { text: "Distance inconnue", value: 0 },
-              duration: scannedLocation.route.duration || { text: "Durée inconnue", value: 0 },
-              remainingDistance: scannedLocation.route.distance,
-              remainingDuration: scannedLocation.route.duration
-            });
-            
-            setIsNavigating(true);
-          }
-          else {
-            
-            if (!location || !location.coords) {
-              throw new Error("Impossible d'obtenir votre position actuelle");
-            }
-          
-            const directRoute = await startDirectNavigation(
-              location.coords, 
-              newDestination,
-              avoidTolls
-            );
-            
-            setActiveRoute(directRoute);
-            
-            setRouteInfo({
-              distance: directRoute.distance,
-              duration: directRoute.duration,
-              remainingDistance: directRoute.distance,
-              remainingDuration: directRoute.duration
-            });
-            
-            setIsNavigating(true);
-            
-          }
-        } catch (error) {
-          Alert.alert(
-            "Erreur de navigation",
-            "Impossible de démarrer la navigation directe. Affichage de la prévisualisation d'itinéraire."
-          );
-          setShowRoutes(true);
-        }
-      } else {
-        setShowRoutes(true);
-      }
-    } catch (error) {
-      Alert.alert("Erreur", "Impossible de traiter les coordonnées QR");
-    } finally {
-      setLoading(false);
-    }
-  } else {
-    Alert.alert("Erreur", "Les coordonnées scannées sont invalides ou incomplètes");
-  }
-};
-
-  const openQRScanner = () => {
-    setQRScannerVisible(true);
-  };
-
   if (!region) return null;
 
   return (
-    <View style={styles.container}>
-      {loading ? (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#3498db" />
-          <Text style={styles.loadingText}>Préparation de l'itinéraire...</Text>
-        </View>
-      ) : isNavigating ? (
-        <NavigationScreen
-          mapRef={mapRef}
-          location={location}
-          destination={destination}
-          heading={heading}
-          activeRoute={activeRoute}
-          isCameraLocked={isCameraLocked}
-          speed={speed}
-          routeInfo={routeInfo}
-          onEndNavigation={endNavigation}
-        />
-      ) : (
-        <>
-          <Map
-            mapRef={mapRef}
-            location={location}
-            destination={destination}
-            heading={heading}
-            isNavigating={isNavigating}
-            activeRoute={activeRoute}
-            setRouteInfo={setRouteInfo}
-            showRoutes={showRoutes}
-            routes={routes}
-            selectedRoute={selectedRoute}
-            onRouteSelect={onRouteSelect}
-            followsUserLocation={false}
-            isCameraLocked={isCameraLocked}
-            temporarilyDisableTracking={temporarilyDisableTracking}
-            onOpenQRScanner={openQRScanner}
-          />
-          
-          <QRScanner 
-            visible={qrScannerVisible}
-            onClose={() => setQRScannerVisible(false)}
-            onQRScanned={handleQRScanned}
-            setSearchQuery={setSearchQuery}
-          />
-          
-          {showRoutes && (
-            <RoutePreview
-              origin={location?.coords}
-              destination={destination}
-              onRouteSelect={(route) => {
-                setSelectedRoute(route.index || 0);
-                onRouteSelect(route);
-                if (route.routes) {
-                  setRoutes(route.routes);
-                }
-              }}
-              onStartNavigation={handleStartNavigation}
-              avoidTolls={avoidTolls}
-              mapRef={mapRef}
-              fitToCoordinates={fitToCoordinates}
-              temporarilyDisableTracking={temporarilyDisableTracking}
-            />
-          )}
-          
-          <SearchBar 
-            value={searchQuery} 
-            onChangeText={setSearchQuery} 
-            onClear={() => setSearchQuery('')}
-            onPlaceSelect={handlePlaceSelect} 
-          />
-          <BlockInfo 
-            speed={speed}
-            isNavigating={false}
-            routeInfo={routeInfo}
-          />
-        </>
-      )}
-      
-      <FloatingMenu 
-        style={styles.floatingMenuStyle}
+    <View style={{ flex: 1 }}>
+      <NavigationUI
+        // État général
+        loading={loading}
+        isNavigating={isNavigating}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        
+        // Props de la carte
+        mapRef={mapRef}
+        location={location}
+        destination={destination}
+        heading={heading}
+        
+        // Props de la navigation
+        activeRoute={activeRoute}
+        routeInfo={routeInfo}
+        speed={speed}
+        
+        // Props de prévisualisation de route
+        showRoutes={showRoutes}
+        routes={routes}
+        selectedRoute={selectedRoute}
+        
+        // Gestion de caméra
+        isCameraLocked={isCameraLocked}
+        unlockCamera={unlockCamera}
+        lockCamera={lockCamera}
+        isPreviewMode={isPreviewMode}
+        fitToCoordinates={fitToCoordinates}
+        temporarilyDisableTracking={temporarilyDisableTracking}
+        NORMAL_ALTITUDE={NORMAL_ALTITUDE}
+        forceInitialLowView={forceInitialLowView}
+        
+        // Gestionnaires d'événements
+        onRouteSelect={onRouteSelect}
+        onStartNavigation={onStartNavigation}
+        onEndNavigation={handleEndNavigationComplete}
+        onPlaceSelect={onPlaceSelect}
         onTollPreferenceChange={handleTollPreferenceChange}
         avoidTolls={avoidTolls}
-        onCameraLockToggle={isCameraLocked ? unlockCamera : lockCamera}
-        isCameraLocked={isCameraLocked}
-        onOpenQRScanner={openQRScanner}
+        setRouteInfo={setRouteInfo}
+        
+        // États du QR
+        qrScannerVisible={qrScannerVisible}
+        onQRScanned={handleQRScanned}
+        closeQRScanner={closeQRScanner}
+        openQRScanner={openQRScanner}
       />
-      <ReportMenu location={location} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  ...globalStyles,
-  container: {
-    flex: 1,
-  },
-  floatingMenuStyle: {
-    position: 'absolute',
-    top: '8%',
-    right: 20,
-    zIndex: 1000,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#333'
-  }
-});

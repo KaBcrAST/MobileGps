@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Platform, ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import axios from 'axios';
@@ -18,7 +18,7 @@ import useMapCamera from '../hooks/useMapCamera';
 import FloatingMenu from './FloatingMenu'; 
 import RoutePreview from './RoutePreview/RoutePreview';
 
-const Map = ({ 
+const MapDisplay = ({ 
   mapRef,
   location,
   destination,
@@ -30,7 +30,11 @@ const Map = ({
   routes,
   selectedRoute,
   onRouteSelect,
-  onStartNavigation, 
+  onStartNavigation,
+  isPreviewMode,
+  fitToCoordinates,
+  NORMAL_ALTITUDE = 600,
+  forceInitialLowView
 }) => {
   const [showRoutePreview, setShowRoutePreview] = useState(false);
   const [customDestination, setDestination] = useState(null);
@@ -43,18 +47,43 @@ const Map = ({
   const [clusterDistance, setClusterDistance] = useState(null);
   const [showRoute, setShowRoute] = useState(false);
   const [notifiedClusters] = useState(new Set());
+  const initialCameraSetup = useRef(false);
   
-  const { 
-    isPreviewMode,
-    forceInitialLowView,
-    fitToCoordinates
-  } = useMapCamera(mapRef, location, heading, isNavigating, { 
-    destination, 
-    coordinates: activeRoute?.coordinates 
-  });
-
-  const handleQRScanned = (scannedLocation) => {
+  // NOUVEL EFFET pour configurer la caméra au démarrage de la navigation
+  useEffect(() => {
+    const setupInitialCamera = () => {
+      if (!mapRef?.current || !location?.coords || initialCameraSetup.current) return;
+      
+      if (isNavigating) {
+        // Définir une altitude plus basse pour être proche du sol
+        const LOW_ALTITUDE = 300; // Réduisez cette valeur pour être plus près du sol
+        
+        console.log('🔍 Configuration initiale de la caméra en navigation');
+        mapRef.current.animateCamera({
+          center: {
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+          },
+          pitch: 60, // Augmentez l'angle d'inclinaison pour voir plus "à l'horizontale"
+          altitude: LOW_ALTITUDE, // Altitude réduite
+          heading: heading || 0, // Orientation selon la direction de déplacement
+          zoom: 18 // Zoom plus important pour être plus près
+        }, { duration: 500 });
+        
+        initialCameraSetup.current = true;
+      }
+    };
     
+    setupInitialCamera();
+    
+    return () => {
+      if (!isNavigating) {
+        initialCameraSetup.current = false;
+      }
+    };
+  }, [mapRef, location, heading, isNavigating]);
+  
+  const handleQRScanned = (scannedLocation) => {
     if (scannedLocation && scannedLocation.latitude && scannedLocation.longitude) {
       setDestination({
         latitude: scannedLocation.latitude,
@@ -68,11 +97,6 @@ const Map = ({
       Alert.alert("Erreur", "Les coordonnées scannées sont invalides ou incomplètes");
     }
   };
-
-  useEffect(() => {
-    return () => {
-    };
-  }, [isNavigating]);
 
   const handlePreviewRouteSelect = useCallback((route) => {
     if (onRouteSelect) {
@@ -122,7 +146,7 @@ const Map = ({
           });
         }
       } catch (error) {
-        console.log('Failed to fetch clusters:', error);
+        console.error('Failed to fetch clusters:', error);
       }
     };
 
@@ -132,16 +156,8 @@ const Map = ({
   }, [location]);
 
   useEffect(() => {
-    setShowRoute(isNavigating);
-  }, [isNavigating]);
-
-  useEffect(() => {
-    console.log('Navigation state changed:', { 
-      isNavigating, 
-      hasRoute: !!activeRoute, 
-      routeLength: activeRoute?.coordinates?.length || 0
-    });
-  }, [isNavigating, activeRoute]);
+    setShowRoute(isNavigating || showRoutes);
+  }, [isNavigating, showRoutes]);
 
   const handleMapReady = () => {
     setIsMapReady(true);
@@ -154,34 +170,29 @@ const Map = ({
     }, 500);
   };
 
-  useEffect(() => {
-    if (mapRef.current && location?.coords) {
-      
-    }
-  }, [location]);
-
   const handleViewMode = (mode) => {
-    if (mode === 'overhead' && mapRef.current && location?.coords) {
+    if (!mapRef?.current || !location?.coords) return;
+    
+    if (mode === 'overhead') {
       mapRef.current.animateCamera({
         center: {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
         pitch: 0,
-        heading: 0,
-        altitude: 1000,
-        zoom: 15,
-      });
-    } else if (mode === 'follow' && mapRef.current && location?.coords) {
+        altitude: NORMAL_ALTITUDE * 1.5,
+        zoom: 17
+      }, { duration: 500 });
+    } else if (mode === 'follow') {
       mapRef.current.animateCamera({
         center: {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
-        pitch: 60,
-        heading: heading || 0,
-        zoom: 18,
-      });
+        pitch: 45,
+        altitude: NORMAL_ALTITUDE,
+        zoom: 17
+      }, { duration: 500 });
     }
   };
 
@@ -193,9 +204,11 @@ const Map = ({
     );
   }
 
-  if (showRoutes && !isNavigating) {
-    return null;
-  }
+  // Important: ne pas retourner null si on est en mode showRoutes mais pas en navigation,
+  // car cela est nécessaire uniquement pour le composant dans NavigationMainScreen
+  // if (showRoutes && !isNavigating) {
+  //   return null;
+  // }
 
   return (
     <View style={styles.container}>
@@ -205,9 +218,9 @@ const Map = ({
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         showsUserLocation={false}
         followsUserLocation={false}
-        showsCompass={true}
+        showsCompass={!isNavigating}
         rotateEnabled={!isNavigating}
-        pitchEnabled={true}
+        pitchEnabled={!isNavigating}
         scrollEnabled={!isNavigating}
         zoomEnabled={!isNavigating}
         moveOnMarkerPress={false}
@@ -228,15 +241,11 @@ const Map = ({
                 setRouteInfo={setRouteInfo}
                 isPreviewMode={isPreviewMode}
                 mapRef={mapRef}
-                
                 fitToCoordinates={fitToCoordinates}
               />
             )}
 
-            <LocationMarker 
-              location={location} 
-              heading={heading} 
-            />
+            <LocationMarker location={location} heading={heading} />
 
             {clusters && clusters.map(cluster => (
               <Marker
@@ -273,15 +282,6 @@ const Map = ({
       />
 
       {!isNavigating && (
-        <FloatingMenu 
-          onTollPreferenceChange={setAvoidTolls}
-          avoidTolls={avoidTolls}
-          onQRScanned={handleQRScanned}
-          onReinitializeCamera={forceInitialLowView}
-        />
-      )}
-
-      {!isNavigating && (
         <>
           <TouchableOpacity 
             onPress={() => handleViewMode('overhead')}
@@ -290,12 +290,18 @@ const Map = ({
             <Icon name="map-marker-path" size={24} color="#fff" />
           </TouchableOpacity>
 
-         
+          <TouchableOpacity 
+            onPress={() => handleViewMode('follow')}
+            style={[styles.topViewButton, styles.followButton]}
+          >
+            <Icon name="compass" size={24} color="#fff" />
+          </TouchableOpacity>
         </>
       )}
+
       {showRoutePreview && customDestination && (
         <RoutePreview
-          origin={location}
+          origin={location?.coords || location}
           destination={customDestination}
           onRouteSelect={handlePreviewRouteSelect}
           onStartNavigation={handleStartNavigationFromPreview}
@@ -335,22 +341,19 @@ const styles = StyleSheet.create({
   },
   topViewButton: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
+    top: 12,
+    right: 12,
     backgroundColor: '#3498db',
-    padding: 10,
-    borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center'
+    borderRadius: 24,
+    padding: 8,
+    elevation: 3,
   },
   followButton: {
-    bottom: 80,
-    backgroundColor: '#27ae60',
-  },
-  qrButton: {
-    bottom: 140, 
-    backgroundColor: '#9b59b6', 
+    top: 64,
   }
 });
 
-export default Map;
+// Pour faciliter la transition, on exporte à la fois sous le nom original "Map"
+// et sous le nouveau nom "MapDisplay"
+export const Map = MapDisplay;
+export default MapDisplay;

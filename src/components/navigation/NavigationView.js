@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Map from '../RealTimeNavigationMap';
-import SpeedLimitSign from '../SpeedLimitSign';
-import BlockInfo from '../BlockInfo';
+
+import MapDisplay from '../MapDisplay';
 import NavigationInstruction from './NavigationInstruction';
+import BlockInfo from '../BlockInfo';
+import SpeedLimitSign from '../SpeedLimitSign';
 import ArrivalNotification from './ArrivalNotification';
 
+// Seuil de distance pour notification d'arrivée (mètres)
 const ARRIVAL_THRESHOLD = 50;
 
-const NavigationScreen = ({
+const NavigationView = ({
   mapRef,
   location,
   destination,
@@ -18,11 +20,40 @@ const NavigationScreen = ({
   isCameraLocked,
   speed,
   routeInfo,
-  onEndNavigation
+  onEndNavigation,
+  mapComponentProps
 }) => {
   const [showArrival, setShowArrival] = useState(false);
   const [hasShownArrival, setHasShownArrival] = useState(false);
+  const initialCameraSetup = useRef(false);
 
+  // NOUVEL EFFET pour configurer la caméra au démarrage de la navigation
+  useEffect(() => {
+    const setupInitialCamera = () => {
+      if (!mapRef?.current || !location?.coords || initialCameraSetup.current) return;
+      
+      // Définir une altitude plus basse pour être proche du sol
+      const LOW_ALTITUDE = 300; // Réduisez cette valeur pour être plus près du sol
+      
+      console.log('🔍 Configuration initiale de la caméra en navigation');
+      mapRef.current.animateCamera({
+        center: {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        },
+        pitch: 60, // Augmentez l'angle d'inclinaison pour voir plus "à l'horizontale"
+        altitude: LOW_ALTITUDE, // Altitude réduite
+        heading: heading || 0, // Orientation selon la direction de déplacement
+        zoom: 18 // Zoom plus important pour être plus près
+      }, { duration: 500 });
+      
+      initialCameraSetup.current = true;
+    };
+    
+    setupInitialCamera();
+  }, [mapRef, location, heading]);
+
+  // Vérifier si on est arrivé à destination
   useEffect(() => {
     if (!location?.coords || !destination || hasShownArrival) return;
 
@@ -54,11 +85,6 @@ const NavigationScreen = ({
     }
   }, [location, destination, hasShownArrival]);
 
-  useEffect(() => {
-    if (mapRef?.current && location?.coords) {
-    }
-  }, [location]);
-
   const handleReturnToHome = () => {
     setShowArrival(false);
     onEndNavigation();
@@ -70,7 +96,8 @@ const NavigationScreen = ({
 
   return (
     <View style={styles.container}>
-      <Map
+      <MapDisplay
+        {...mapComponentProps}
         mapRef={mapRef}
         location={location}
         destination={destination}
@@ -146,7 +173,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
-  },
+  }
 });
 
-export default NavigationScreen;
+export default NavigationView;

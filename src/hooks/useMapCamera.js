@@ -17,12 +17,13 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   
   const isAndroid = Platform.OS === 'android';
   
-  const NAVIGATION_ALTITUDE = isAndroid ? 40 : 60;
-  const NORMAL_ALTITUDE = isAndroid ? 50 : 70;
-  const PREVIEW_ALTITUDE = 1000;
+  // Réduisez l'altitude normale pour qu'elle ne soit pas trop différente du mode navigation
+  const NAVIGATION_ALTITUDE = 300; // Altitude basse pour le mode navigation
+  const NORMAL_ALTITUDE = 600; // Altitude réduite pour le mode normal (était 1000)
+  const PREVIEW_ALTITUDE = 600; // Altitude de prévisualisation également réduite
   
   const NAVIGATION_PITCH = 80;
-  const NORMAL_PITCH = 80;
+  const NORMAL_PITCH = 60; // Pitch réduit pour le mode normal (était 80)
   
   const OFFSET_DISTANCE = isAndroid ? -60 : 0;
 
@@ -263,6 +264,32 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     }
   }, [mapRef, temporarilyDisableTracking]);
 
+  // Fonction spécifique pour gérer la fin de navigation
+  const handleEndNavigation = useCallback(() => {
+    if (!mapRef?.current || !location?.coords) return;
+    
+    // Libérer les blocages de mise à jour
+    blockAutoUpdates.current = false;
+    
+    // Transition douce vers la vue normale
+    const camera = {
+      center: {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      },
+      pitch: NORMAL_PITCH,
+      heading: heading || calculatedHeading.current || 0,
+      altitude: NORMAL_ALTITUDE,
+      zoom: isAndroid ? 17 : 16.5
+    };
+    
+    // Animation plus lente pour une transition douce
+    animateCameraSafely(camera, { duration: 800 });
+    
+    // Réinitialiser les références utilisées pendant la navigation
+    initialViewApplied.current = false;
+  }, [mapRef, location, heading, animateCameraSafely, isAndroid]);
+
   const focusOnLocation = useCallback((coords, options = {}) => {
     if (!mapRef?.current || !coords) return;
     
@@ -282,6 +309,24 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     animateCameraSafely(camera, { duration: options.duration || 800 });
   }, [mapRef, heading, animateCameraSafely, temporarilyDisableTracking, NORMAL_PITCH, NORMAL_ALTITUDE]);
 
+  const updateCamera = useCallback(() => {
+    if (!mapRef?.current || !location?.coords || !isCameraLocked) return;
+    
+    // Utiliser une altitude différente selon le mode
+    const altitude = isNavigating ? NAVIGATION_ALTITUDE : NORMAL_ALTITUDE;
+    
+    mapRef.current.animateCamera({
+      center: {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      },
+      heading: heading || 0,
+      pitch: isNavigating ? 60 : 45, // Plus incliné en mode navigation
+      altitude: altitude, // Altitude adaptée au mode
+      zoom: isNavigating ? 18 : 17 // Zoom plus important en navigation
+    }, { duration: 500 });
+  }, [mapRef, location, heading, isNavigating, isCameraLocked]);
+
   return {
     isCameraLocked,
     isPreviewMode,
@@ -295,7 +340,8 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     setPreviewMode,
     NAVIGATION_ALTITUDE,
     NORMAL_ALTITUDE,
-    PREVIEW_ALTITUDE
+    PREVIEW_ALTITUDE,
+    handleEndNavigation
   };
 };
 
