@@ -4,7 +4,7 @@ import { API_URL } from '../config/config';
 const AuthContext = createContext();
 
 const STORAGE_KEYS = {
-  TOKEN: 'auth_token',
+  TOKEN: 'authToken', // ⚠️ Changé pour correspondre à ce que vous utilisez déjà
   USER: 'user'
 };
 
@@ -35,30 +35,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (data) => {
+  const login = async (authData) => {
     try {
-      if (data.user && !data.user._id) {
-        const response = await fetch(`${API_URL}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${data.token}`
-          }
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          data.user = { ...data.user, _id: userData._id };
-        }
+      if (!authData.token || !authData.user) {
+        throw new Error('Données d\'authentification incomplètes');
       }
+      
+      // Stockage du token et des informations utilisateur
       await Promise.all([
-        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user)),
-        AsyncStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
+        AsyncStorage.setItem(STORAGE_KEYS.TOKEN, authData.token),
+        AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(authData.user))
       ]);
       
-      setUser(data.user);
-      setToken(data.token);
+      // Mise à jour de l'état
+      setToken(authData.token);
+      setUser(authData.user);
+      
+      return true;
     } catch (error) {
-      console.error('Erreur de connexion:', error);
-      throw new Error('Échec de la connexion');
+      console.error('Error storing auth data:', error);
+      return false;
+    }
+  };
+
+  // Fonction pour mettre à jour les informations utilisateur
+  const updateUserInfo = async (updatedUser) => {
+    try {
+      if (!updatedUser) {
+        throw new Error('Informations utilisateur manquantes');
+      }
+      
+      // Mettre à jour dans AsyncStorage
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updatedUser));
+      
+      // Mettre à jour l'état
+      setUser(updatedUser);
+      
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des informations utilisateur:', error);
+      return false;
     }
   };
 
@@ -76,12 +92,64 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Fonction pour récupérer le token actuel
+  const getToken = async () => {
+    try {
+      return await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du token:', error);
+      return null;
+    }
+  };
+
+  // Ajoutez cette fonction pour actualiser les données utilisateur
+  const refreshUserData = async () => {
+    try {
+      // Vérifier si l'utilisateur est connecté
+      if (!token) {
+        return false;
+      }
+
+      // Récupérer le token actuel
+      const currentToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+      
+      // Faire une requête à l'API pour obtenir les données à jour
+      const response = await fetch(`${API_URL}/api/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${currentToken}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        // Mettre à jour les informations utilisateur dans le state
+        setUser(data.user);
+        
+        // Mettre à jour le stockage local
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+        
+        return true;
+      } else {
+        console.error('Échec de l\'actualisation des données utilisateur:', data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'actualisation des données utilisateur:', error);
+      return false;
+    }
+  };
+
   const value = {
     user,
     token,
     loading,
     login,
-    logout
+    logout,
+    updateUserInfo,
+    getToken,
+    refreshUserData // Exposer la nouvelle fonction
   };
 
   return (

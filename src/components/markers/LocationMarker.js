@@ -6,13 +6,20 @@ const LocationMarker = ({ location, heading }) => {
   const [imageError, setImageError] = useState(false);
   const [isAndroid] = useState(Platform.OS === 'android');
   
+  // CORRECTION: Ajout d'une constante pour inverser l'orientation si nécessaire
+  // Ajustez cette valeur (0 ou 180) selon l'orientation de votre image
+  const ROTATION_OFFSET = 180;
+  
+  // Calculer la rotation finale du marqueur
+  const finalRotation = ((heading || 0) + ROTATION_OFFSET) % 360;
+  
   if (!location || !location.coords) return null;
   if (isAndroid) {
     return (
       <Marker
         coordinate={location.coords}
         anchor={{ x: 0.5, y: 0.5 }}
-        rotation={heading || 0}
+        rotation={finalRotation}
         flat
       >
         <Image 
@@ -29,7 +36,7 @@ const LocationMarker = ({ location, heading }) => {
     <Marker
       coordinate={location.coords}
       anchor={{ x: 0.5, y: 0.5 }}
-      rotation={heading || 0}
+      rotation={finalRotation}
       flat
     >
       {imageError ? (

@@ -17,15 +17,18 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   
   const isAndroid = Platform.OS === 'android';
   
-  // Réduisez l'altitude normale pour qu'elle ne soit pas trop différente du mode navigation
-  const NAVIGATION_ALTITUDE = 300; // Altitude basse pour le mode navigation
-  const NORMAL_ALTITUDE = 600; // Altitude réduite pour le mode normal (était 1000)
-  const PREVIEW_ALTITUDE = 600; // Altitude de prévisualisation également réduite
+  // MODIFICATION: Réduire les altitudes pour rapprocher la caméra
+  const NAVIGATION_ALTITUDE = 200; // Réduit de 300 à 200
+  const NORMAL_ALTITUDE = 400;     // Réduit de 600 à 400
+  const PREVIEW_ALTITUDE = 450;    // Réduit de 600 à 450
   
-  const NAVIGATION_PITCH = 80;
-  const NORMAL_PITCH = 60; // Pitch réduit pour le mode normal (était 80)
+  // MODIFICATION: Ajustement des angles pour une meilleure visibilité
+  const NAVIGATION_PITCH = 85;     // Augmenté pour mieux voir devant
+  const NORMAL_PITCH = 65;         // Augmenté légèrement
   
-  const OFFSET_DISTANCE = isAndroid ? -60 : 0;
+  // MODIFICATION: Inverser le signe pour corriger l'orientation
+  // Valeur négative pour placer correctement la caméra derrière le point actuel
+  const OFFSET_DISTANCE = isAndroid ? -20 : -15;
 
   const offsetCoordinates = useCallback((latitude, longitude, heading, distanceInMeters) => {
     const earthRadius = 6378137;
@@ -94,16 +97,16 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
       const offsetCoords = offsetCoordinates(
         coords.latitude, 
         coords.longitude, 
-        (headingToUse + 180) % 360, 
-        Math.abs(OFFSET_DISTANCE)
+        headingToUse,
+        -20
       );
       
       return {
         center: offsetCoords,
         pitch: NAVIGATION_PITCH,
-        heading: headingToUse,
+        heading: (headingToUse + 180) % 360, // INVERSER LE SENS DU CURSEUR
         altitude: NAVIGATION_ALTITUDE,
-        zoom: isAndroid ? 18.5 : 18
+        zoom: isAndroid ? 19 : 18.5
       };
     } else {
       return {
@@ -112,11 +115,12 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
           longitude: coords.longitude 
         },
         pitch: NORMAL_PITCH,
-        heading: headingToUse,
+        heading: headingToUse, // En mode normal, on garde l'orientation normale
         altitude: NORMAL_ALTITUDE,
-        zoom: isAndroid ? 18 : 17.5};
+        zoom: isAndroid ? 18.5 : 18
+      };
     }
-  }, [offsetCoordinates, NAVIGATION_ALTITUDE, NORMAL_ALTITUDE, OFFSET_DISTANCE, isAndroid]);
+  }, [offsetCoordinates, NAVIGATION_ALTITUDE, NORMAL_ALTITUDE, isAndroid]);
 
   const temporarilyDisableTracking = useCallback((durationMs = 5000) => {
     blockAutoUpdates.current = true;
@@ -160,6 +164,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     previousPosition.current = currentPosition;
   }, [location?.coords, getDistance, getBearing]);
 
+  // Dans le hook useEffect pour la mise à jour de la caméra en navigation
   useEffect(() => {
     if (!isNavigating || !mapRef?.current || !location?.coords || !isCameraLocked || blockAutoUpdates.current) {
       return;
@@ -173,21 +178,25 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     lastUpdateTime.current = now;
     
     const nextPoint = findNextPoint(location.coords, coordinates);
+    // Calculer la direction vers laquelle on se dirige
     const directionToUse = nextPoint ? getBearing(location.coords, nextPoint) : (calculatedHeading.current || heading || 0);
     
+    // SOLUTION: Ne pas ajouter 180° pour le calcul de l'offset
+    // Placez la caméra légèrement derrière mais dans la même direction
     const offsetCenter = offsetCoordinates(
-      location.coords.latitude, 
-      location.coords.longitude, 
-      (directionToUse + 180) % 360,  
-      Math.abs(OFFSET_DISTANCE)      
+      location.coords.latitude,
+      location.coords.longitude,
+      directionToUse, // Utilisez la direction actuelle sans inversion
+      -20 // Valeur négative pour placer la caméra derrière la position actuelle
     );
     
+    // Configuration de la caméra avec la même orientation que la direction
     const camera = {
-      center: offsetCenter,          
-      pitch: NAVIGATION_PITCH,       
-      heading: directionToUse,       
+      center: offsetCenter,
+      pitch: NAVIGATION_PITCH,
+      heading: directionToUse, // Même direction que le déplacement
       altitude: NAVIGATION_ALTITUDE,
-      zoom: isAndroid ? 18.5 : 18,   
+      zoom: isAndroid ? 19 : 18.5,
     };
     
     animateCameraSafely(camera, { duration: isAndroid ? 600 : 800 });
@@ -271,16 +280,22 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     // Libérer les blocages de mise à jour
     blockAutoUpdates.current = false;
     
+    // CORRECTION: Définir correctement les variables manquantes
+    const currentHeading = heading || calculatedHeading.current || 0;
+    
+    // CORRECTION: Créer des coordonnées centrées sur la position actuelle (sans offset)
+    const centerPosition = {
+      latitude: location.coords.latitude,
+      longitude: location.coords.longitude
+    };
+    
     // Transition douce vers la vue normale
     const camera = {
-      center: {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      },
-      pitch: NORMAL_PITCH,
-      heading: heading || calculatedHeading.current || 0,
-      altitude: NORMAL_ALTITUDE,
-      zoom: isAndroid ? 17 : 16.5
+      center: centerPosition,
+      pitch: NORMAL_PITCH, // Utiliser le pitch normal, pas celui de navigation
+      heading: currentHeading, // Utiliser l'orientation actuelle
+      altitude: NORMAL_ALTITUDE, // Utiliser l'altitude normale, pas celle de navigation
+      zoom: isAndroid ? 18 : 17.5,
     };
     
     // Animation plus lente pour une transition douce
@@ -288,7 +303,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     
     // Réinitialiser les références utilisées pendant la navigation
     initialViewApplied.current = false;
-  }, [mapRef, location, heading, animateCameraSafely, isAndroid]);
+  }, [mapRef, location, heading, NORMAL_PITCH, NORMAL_ALTITUDE, animateCameraSafely, isAndroid]);
 
   const focusOnLocation = useCallback((coords, options = {}) => {
     if (!mapRef?.current || !coords) return;
@@ -327,6 +342,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     }, { duration: 500 });
   }, [mapRef, location, heading, isNavigating, isCameraLocked]);
 
+  // À la fin du hook useMapCamera, modifiez le return pour inclure calculatedHeading
   return {
     isCameraLocked,
     isPreviewMode,
@@ -341,7 +357,8 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     NAVIGATION_ALTITUDE,
     NORMAL_ALTITUDE,
     PREVIEW_ALTITUDE,
-    handleEndNavigation
+    handleEndNavigation,
+    calculatedHeading: calculatedHeading.current // Exposer cette valeur
   };
 };
 

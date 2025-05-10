@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import RegisterModal from './RegisterModal';
 import CryptoJS from 'crypto-js';
 import { API_URL } from '../config/config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginModal = ({ visible, onClose }) => {
   const { login } = useAuth();
@@ -22,6 +23,16 @@ const LoginModal = ({ visible, onClose }) => {
 
   const handleClassicLogin = async () => {
     try {
+      // Validation des entrées
+      const validationErrors = {};
+      if (!formData.email.trim()) validationErrors.email = "L'email est requis";
+      if (!formData.password) validationErrors.password = "Le mot de passe est requis";
+      
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+
       const secureFormData = {
         email: formData.email.toLowerCase().trim(),
         password: hashPassword(formData.password)
@@ -38,8 +49,50 @@ const LoginModal = ({ visible, onClose }) => {
       const data = await response.json();
 
       if (data.success) {
-        await login(data);
-        onClose();
+        console.log('Login successful, token received:', data.token ? 'Yes' : 'No');
+        
+        // S'assurer que le token est bien récupéré
+        if (!data.token) {
+          console.error('Token missing in response');
+          setErrors({ submit: 'Données de connexion incomplètes' });
+          return;
+        }
+        
+        // Afficher des informations sur le token
+        console.log('Token COMPLET:', data.token);
+        
+        try {
+          // Afficher la structure du token JWT (sans le décodage complet par sécurité)
+          const tokenParts = data.token.split('.');
+          if (tokenParts.length === 3) {
+            console.log('Token structure: Header.Payload.Signature (JWT format)');
+            console.log('Token header:', tokenParts[0]);
+            console.log('Token payload:', tokenParts[1]);
+            console.log('Token signature:', tokenParts[2]);
+          } else {
+            console.log('Token does not appear to be in JWT format');
+          }
+        } catch (tokenError) {
+          console.log('Error examining token structure:', tokenError);
+        }
+        
+        // Loguer la structure de données reçue
+        console.log('Auth data structure:', Object.keys(data));
+        
+        // Appeler login avec les données dans le format attendu
+        const loginSuccess = await login(data);
+        
+        // Vérifier que le token est bien enregistré après login
+        const storedToken = await AsyncStorage.getItem('authToken');
+        console.log('Token stored successfully after login:', storedToken ? 'Yes' : 'No');
+        console.log('Stored token matches received token:', storedToken === data.token ? 'Yes' : 'No');
+        
+        if (loginSuccess) {
+          // Succès de la connexion
+          onClose();
+        } else {
+          setErrors({ submit: 'Erreur lors du stockage des données d\'authentification' });
+        }
       } else {
         setErrors({ submit: data.message || 'Email ou mot de passe incorrect' });
       }
@@ -51,7 +104,6 @@ const LoginModal = ({ visible, onClose }) => {
 
   const handleGoogleLogin = async () => {
     try {
-      
       const result = await WebBrowser.openAuthSessionAsync(
         `${API_URL}/api/auth/google`,
         'gpsapp://auth',
@@ -60,7 +112,6 @@ const LoginModal = ({ visible, onClose }) => {
           prefersEphemeralWebBrowserSession: true
         }
       );
-
       
       if (result.type === 'success' && result.url) {
         const url = new URL(result.url);
@@ -73,11 +124,24 @@ const LoginModal = ({ visible, onClose }) => {
           throw new Error('Données de connexion incomplètes');
         }
 
+        console.log('Google login successful, token received');
+        
+        // Stocker le token directement dans AsyncStorage
+        await AsyncStorage.setItem('authToken', token);
+        
         const user = JSON.parse(decodeURIComponent(userStr));
+        
+        // Appeler login avec les données dans le bon format
         await login({ token, user });
+        
+        // Vérifier que le token est bien enregistré
+        const storedToken = await AsyncStorage.getItem('authToken');
+        console.log('Token stored successfully:', storedToken ? 'Yes' : 'No');
+        
         onClose();
       }
     } catch (error) {
+      console.error('Google login error:', error);
       setErrors({ 
         submit: 'Erreur de connexion Google: ' + error.message 
       });

@@ -33,9 +33,18 @@ const MapDisplay = ({
   onStartNavigation,
   isPreviewMode,
   fitToCoordinates,
-  NORMAL_ALTITUDE = 600,
-  forceInitialLowView
+  forceInitialLowView,
+  NORMAL_ALTITUDE // Assurez-vous que cette prop est bien passée
 }) => {
+  // CORRECTION: Obtenir l'instance de useMapCamera pour avoir accès aux valeurs calculées
+  const { calculatedHeading } = useMapCamera(
+    mapRef, 
+    location, 
+    heading, 
+    isNavigating, 
+    { destination, coordinates: activeRoute?.coordinates }
+  );
+
   const [showRoutePreview, setShowRoutePreview] = useState(false);
   const [customDestination, setDestination] = useState(null);
   const [avoidTolls, setAvoidTolls] = useState(false);
@@ -49,40 +58,7 @@ const MapDisplay = ({
   const [notifiedClusters] = useState(new Set());
   const initialCameraSetup = useRef(false);
   
-  // NOUVEL EFFET pour configurer la caméra au démarrage de la navigation
-  useEffect(() => {
-    const setupInitialCamera = () => {
-      if (!mapRef?.current || !location?.coords || initialCameraSetup.current) return;
-      
-      if (isNavigating) {
-        // Définir une altitude plus basse pour être proche du sol
-        const LOW_ALTITUDE = 300; // Réduisez cette valeur pour être plus près du sol
-        
-        console.log('🔍 Configuration initiale de la caméra en navigation');
-        mapRef.current.animateCamera({
-          center: {
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-          },
-          pitch: 60, // Augmentez l'angle d'inclinaison pour voir plus "à l'horizontale"
-          altitude: LOW_ALTITUDE, // Altitude réduite
-          heading: heading || 0, // Orientation selon la direction de déplacement
-          zoom: 18 // Zoom plus important pour être plus près
-        }, { duration: 500 });
-        
-        initialCameraSetup.current = true;
-      }
-    };
-    
-    setupInitialCamera();
-    
-    return () => {
-      if (!isNavigating) {
-        initialCameraSetup.current = false;
-      }
-    };
-  }, [mapRef, location, heading, isNavigating]);
-  
+
   const handleQRScanned = (scannedLocation) => {
     if (scannedLocation && scannedLocation.latitude && scannedLocation.longitude) {
       setDestination({
@@ -245,7 +221,8 @@ const MapDisplay = ({
               />
             )}
 
-            <LocationMarker location={location} heading={heading} />
+            {/* CORRECTION: S'assurer que heading est toujours défini */}
+            <LocationMarker location={location} heading={calculatedHeading || heading || 0} />
 
             {clusters && clusters.map(cluster => (
               <Marker

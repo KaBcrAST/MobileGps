@@ -82,6 +82,19 @@ const useNavigationLogic = (location, mapRef) => {
     }
   }, [destination, fetchRoute]);
 
+  const handleIncomingRouteData = (routeData) => {
+    if (routeData && routeData.route) {
+      setActiveRoute(routeData.route);
+      setDestination({
+        latitude: routeData.latitude,
+        longitude: routeData.longitude,
+        name: routeData.name,
+        address: routeData.address
+      });
+      setIsNavigating(true);
+    }
+  };
+
   return {
     destination,
     setDestination,
@@ -94,7 +107,8 @@ const useNavigationLogic = (location, mapRef) => {
     setActiveRoute,
     endNavigation,
     avoidTolls,
-    handleTollPreferenceChange
+    handleTollPreferenceChange,
+    handleIncomingRouteData
   };
 };
 

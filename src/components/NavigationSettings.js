@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { isSoundEnabled, setSoundEnabled } from '../services/trackService';
+import FavoritesListComponent from './FavoritesListComponent';
 
 const SOUND_ENABLED_KEY = 'soundEnabled';
+const FAVORITES_AUTO_SYNC_KEY = 'favoritesAutoSync';
+const FAVORITES_SORT_BY_KEY = 'favoritesSortBy';
 
-const NavigationSettings = ({ onTollPreferenceChange }) => {
+// Modifiez la déclaration du composant pour inclure onRouteSelected comme prop avec valeur par défaut
+const NavigationSettings = ({ onTollPreferenceChange, navigation, onRouteSelected = null }) => {
   const [isTollDropdownOpen, setIsTollDropdownOpen] = useState(false);
   const [isSoundDropdownOpen, setIsSoundDropdownOpen] = useState(false);
+  const [isFavoritesDropdownOpen, setIsFavoritesDropdownOpen] = useState(false);
   const [avoidTolls, setAvoidTolls] = useState(false);
   const [soundEnabled, setSoundEnabledState] = useState(true);
+  const [favoritesAutoSync, setFavoritesAutoSync] = useState(true);
+  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
 
   useEffect(() => {
     loadTollPreference();
     loadSoundPreference();
+    loadFavoritesPreferences();
   }, []);
 
   const loadTollPreference = async () => {
@@ -38,18 +46,36 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     }
   };
 
+  const loadFavoritesPreferences = async () => {
+    try {
+      const autoSync = await AsyncStorage.getItem(FAVORITES_AUTO_SYNC_KEY);
+      if (autoSync !== null) {
+        setFavoritesAutoSync(JSON.parse(autoSync));
+      }
+    } catch (error) {
+      console.error('Error loading favorites preferences:', error);
+    }
+  };
+
   const handleTollPress = () => {
     setIsTollDropdownOpen(!isTollDropdownOpen);
-    if (!isTollDropdownOpen && isSoundDropdownOpen) {
+    if (!isTollDropdownOpen) {
       setIsSoundDropdownOpen(false);
+      setIsFavoritesDropdownOpen(false);
     }
   };
 
   const handleSoundPress = () => {
     setIsSoundDropdownOpen(!isSoundDropdownOpen);
-    if (!isSoundDropdownOpen && isTollDropdownOpen) {
+    if (!isSoundDropdownOpen) {
       setIsTollDropdownOpen(false);
+      setIsFavoritesDropdownOpen(false);
     }
+  };
+
+  const handleFavoritesPress = () => {
+    // Ouvrir directement la liste des favoris au lieu d'un menu déroulant
+    setShowFavoritesModal(true);
   };
 
   const handleTollToggle = async (value) => {
@@ -73,6 +99,58 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
     } catch (error) {
       console.error('Error saving sound preference:', error);
     }
+  };
+
+  const handleFavoritesAutoSyncToggle = async (value) => {
+    try {
+      setFavoritesAutoSync(value);
+      await AsyncStorage.setItem(FAVORITES_AUTO_SYNC_KEY, JSON.stringify(value));
+      
+      console.log(`🌟 Synchronisation automatique des favoris ${value ? 'activée' : 'désactivée'}`);
+    } catch (error) {
+      console.error('Error saving favorites auto sync preference:', error);
+    }
+  };
+
+  // Mise à jour dans NavigationSettings.js
+  const handleSelectRoute = (routeData) => {
+    console.log('Itinéraire sélectionné:', routeData);
+    
+    // Déclenchement correct de la navigation
+    if (routeData && routeData.route) {
+      // Naviguer vers l'écran Map avec les paramètres pour démarrer la navigation
+      navigation.navigate('Map', {
+        routeData: routeData,
+        destination: {
+          latitude: routeData.latitude,
+          longitude: routeData.longitude,
+          name: routeData.name,
+          address: routeData.address
+        },
+        startNavigation: true,
+        showRoutePreview: false, // On veut démarrer immédiatement, pas voir l'aperçu
+        navigationMode: true,
+        autoStart: true
+      });
+
+      // Si onRouteSelected est fourni (pour la compatibilité avec useNavigationLogic)
+      if (onRouteSelected) {
+        onRouteSelected(routeData);
+      }
+    }
+    
+    // Fermez le modal après sélection
+    setShowFavoritesModal(false);
+  };
+
+  // Fonction pour synchroniser les favoris manuellement
+  const handleSyncFavorites = () => {
+    setShowFavoritesModal(true);
+  };
+
+  // Fonction pour fermer le modal des favoris
+  const handleCloseFavoritesModal = () => {
+    setShowFavoritesModal(false);
   };
 
   return (
@@ -152,6 +230,48 @@ const NavigationSettings = ({ onTollPreferenceChange }) => {
           </View>
         )}
       </View>
+
+      {/* Section Favoris - Modifiée pour ouvrir directement le modal */}
+      <View style={styles.menuSeparator}>
+        <TouchableOpacity 
+          style={styles.settingItem}
+          onPress={handleFavoritesPress}
+        >
+          <View style={styles.settingContent}>
+            <Ionicons name="star-outline" size={24} color="#333" />
+            <Text style={styles.settingText}>Mes favoris</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#666" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Modal pour afficher la liste des favoris */}
+      <Modal
+        visible={showFavoritesModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleCloseFavoritesModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Mes favoris</Text>
+            <TouchableOpacity 
+              onPress={handleCloseFavoritesModal}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          {/* N'utilisez pas de ScrollView ici */}
+          {showFavoritesModal && ( // N'afficher que si le modal est visible
+            <FavoritesListComponent 
+              onSelectRoute={handleSelectRoute}
+              onClose={handleCloseFavoritesModal}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -205,7 +325,45 @@ const styles = StyleSheet.create({
     marginTop: 5,
     borderTopWidth: 0.5,
     borderTopColor: '#e0e0e0',
-  }
+  },
+  favoriteAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: '#e0e0e0',
+    marginTop: 4,
+  },
+  favoriteActionText: {
+    fontSize: 15,
+    color: '#2196F3',
+  },
+  // Nouveaux styles pour le modal des favoris
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    marginTop: 40, // Pour laisser de l'espace pour la barre de statut
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalContent: {
+    flex: 1,
+  },
 });
 
 export default NavigationSettings;

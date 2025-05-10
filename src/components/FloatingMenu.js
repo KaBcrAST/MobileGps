@@ -7,9 +7,17 @@ import NavigationSettings from './NavigationSettings';
 
 const { width } = Dimensions.get('window');
 
-const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = false, onOpenQRScanner }) => {
+const FloatingMenu = ({ 
+  onTollPreferenceChange, 
+  avoidTolls, 
+  isNextToSearchBar = false, 
+  onOpenQRScanner,
+  navigation, // Add navigation to the props
+  onRouteSelected // Add this if needed for route handling
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-300)).current;
+  
 
   const toggleMenu = () => {
     Animated.spring(slideAnim, {
@@ -59,9 +67,11 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
             <ProfileSection />
             
             <NavigationSettings 
-              avoidTolls={avoidTolls}
-              onTollPreferenceChange={onTollPreferenceChange}
-            />
+        avoidTolls={avoidTolls}
+        onTollPreferenceChange={onTollPreferenceChange}
+        navigation={navigation}
+        onRouteSelected={onRouteSelected}
+      />
 
             <TouchableOpacity 
               style={styles.qrScannerButton}
@@ -104,6 +114,8 @@ const FloatingMenu = ({ onTollPreferenceChange, avoidTolls, isNextToSearchBar = 
       <NavigationSettings 
         avoidTolls={avoidTolls}
         onTollPreferenceChange={onTollPreferenceChange}
+        navigation={navigation}
+        onRouteSelected={onRouteSelected}
       />
       
       <TouchableOpacity 

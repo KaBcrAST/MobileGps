@@ -59,7 +59,11 @@ const NavigationUI = ({
   qrScannerVisible,
   onQRScanned,
   closeQRScanner,
-  openQRScanner
+  openQRScanner,
+  
+  // Ajoutez navigation et onRouteSelected aux props
+  navigation,  // Ajoutez cette prop
+  onRouteSelected  // Ajoutez cette prop
 }) => {
   // Propriétés communes pour le composant MapDisplay
   const mapComponentProps = {
@@ -160,6 +164,8 @@ const NavigationUI = ({
         onCameraLockToggle={isCameraLocked ? unlockCamera : lockCamera}
         isCameraLocked={isCameraLocked}
         onOpenQRScanner={openQRScanner}
+        navigation={navigation}  // Transmettez l'objet navigation
+        onRouteSelected={onRouteSelected}  // Transmettez la fonction onRouteSelected
       />
       
       <ReportMenu location={location} />

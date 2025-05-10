@@ -14,16 +14,26 @@ import { formatDestination } from '../services/placeService';
 
 // Interface UI
 import NavigationUI from '../components/navigation/NavigationUI';
+// AJOUT: Importer NavigationSettings
+import NavigationSettings from '../components/NavigationSettings';
+// AJOUT: Importer useNavigation pour obtenir l'objet navigation
+import { useNavigation } from '@react-navigation/native';
 
 /**
  * Écran principal de navigation
  */
 export default function NavigationMainScreen() {
+  // AJOUT: Obtenir l'objet navigation via le hook
+  const navigation = useNavigation();
+  
   // Référence à la carte
   const mapRef = useRef(null);
   
   // Hooks de base
   const { location, region, speed } = useLocation(mapRef);
+  const navigationLogic = useNavigationLogic(location, mapRef);
+  
+  // Destructurer les valeurs du hook pour plus de clarté
   const { 
     destination, 
     setDestination, 
@@ -36,8 +46,9 @@ export default function NavigationMainScreen() {
     avoidTolls,
     handleTollPreferenceChange,
     activeRoute,
-    setActiveRoute
-  } = useNavigationLogic(location, mapRef);
+    setActiveRoute,
+    handleIncomingRouteData // AJOUT: Extraire cette fonction
+  } = navigationLogic;
   
   // Hook de gestion de caméra
   const {
@@ -185,7 +196,10 @@ export default function NavigationMainScreen() {
         onQRScanned={handleQRScanned}
         closeQRScanner={closeQRScanner}
         openQRScanner={openQRScanner}
+        navigation={navigation}  // Passez l'objet navigation
+        onRouteSelected={handleIncomingRouteData}  // Passez la fonction handleIncomingRouteData
       />
+      
     </View>
   );
 }
