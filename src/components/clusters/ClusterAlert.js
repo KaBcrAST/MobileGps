@@ -3,7 +3,6 @@ import { View, Text, Animated, StyleSheet, TouchableOpacity } from 'react-native
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getAlertIcon, getAlertColor } from './ClusterUtils';
 import { setupTrackService, loadSound, playSound } from '../../services/trackService';
-import colors from '../../styles/colors';
 
 const ClusterAlert = ({ 
   cluster, 
