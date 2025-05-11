@@ -8,12 +8,10 @@ const ArrivalNotification = ({
   onClose, 
   onReturnToHomeScreen 
 }) => {
-  // Animation pour l'entrée du composant
   const slideAnimation = React.useRef(new Animated.Value(400)).current;
 
   useEffect(() => {
     if (visible) {
-      // Animation d'entrée
       Animated.spring(slideAnimation, {
         toValue: 0,
         friction: 8,
@@ -21,7 +19,6 @@ const ArrivalNotification = ({
         useNativeDriver: true,
       }).start();
     } else {
-      // Animation de sortie
       Animated.timing(slideAnimation, {
         toValue: 400,
         duration: 300,
@@ -123,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButton: {
-    backgroundColor: '#1A73E8',
+    backgroundColor: 'rgb(74, 58, 255)',
   },
   buttonText: {
     fontSize: 16,

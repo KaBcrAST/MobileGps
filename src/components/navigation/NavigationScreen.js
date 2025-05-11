@@ -105,16 +105,6 @@ const NavigationScreen = ({
         <SpeedLimitSign location={location} />
       </View>
 
-      {/* Infos de trafic */}
-      {activeRoute?.traffic?.hasSlowdowns && (
-        <View style={styles.trafficAlertContainer}>
-          <Ionicons name="alert-circle" size={20} color="#FF8800" />
-          <Text style={styles.trafficAlertText}>
-            Ralentissements: +{activeRoute.traffic.slowdownDuration.text}
-          </Text>
-        </View>
-      )}
-
       {/* Notification d'arrivée */}
       <ArrivalNotification 
         visible={showArrival}
@@ -136,9 +126,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
+  // Nous pouvons conserver ces styles même s'ils ne sont pas utilisés
+  // ou les supprimer si vous préférez
   trafficAlertContainer: {
     position: 'absolute',
-    top: 120, // Ajustez selon votre layout
+    top: 120,
     left: 20,
     right: 20,
     backgroundColor: 'rgba(255, 248, 224, 0.9)',

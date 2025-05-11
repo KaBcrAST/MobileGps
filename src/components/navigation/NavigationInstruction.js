@@ -296,7 +296,7 @@ const NavigationInstruction = ({ location, destination }) => {
       <Icon 
         name={getDirectionIcon(currentStep.maneuver)} 
         size={32} 
-        color="#3498db" 
+        color="rgb(74, 58, 255)" // Changé de "#3498db" à la nouvelle couleur
       />
       <View style={styles.textContainer}>
         <Text style={styles.distance}>
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
   distance: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#3498db',
+    color: 'rgb(74, 58, 255)', // Changé de '#3498db' à la nouvelle couleur rgb(74, 58, 255)
   },
   instruction: {
     fontSize: 16,

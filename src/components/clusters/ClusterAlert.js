@@ -3,19 +3,23 @@ import { View, Text, Animated, StyleSheet, TouchableOpacity } from 'react-native
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { getAlertIcon, getAlertColor } from './ClusterUtils';
 import { setupTrackService, loadSound, playSound } from '../../services/trackService';
+import colors from '../../styles/colors';
 
-const ClusterAlert = ({ cluster, distance, onDismiss, onStillPresent }) => {
+const ClusterAlert = ({ 
+  cluster, 
+  distance, 
+  onDismiss, 
+  onStillPresent,
+  buttonColor = 'rgb(74, 58, 255)'
+}) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const soundLoadedRef = useRef(false);
 
-  // Initialiser et charger le son d'alerte
   useEffect(() => {
     const initSound = async () => {
       try {
-        // Initialiser le service audio si ce n'est pas déjà fait
         await setupTrackService();
         
-        // Charger le son d'alerte
         const success = await loadSound(
           'clusteralert',
           require('../../../assets/sounds/clusteralert.mp3'),
@@ -23,35 +27,28 @@ const ClusterAlert = ({ cluster, distance, onDismiss, onStillPresent }) => {
         );
         
         if (success) {
-          console.log('✅ Son d\'alerte de cluster chargé avec succès');
           soundLoadedRef.current = true;
         }
       } catch (e) {
-        console.error('❌ Erreur lors du chargement du son d\'alerte:', e);
       }
     };
     
     initSound();
   }, []);
 
-  // Gestion de l'animation et lecture du son quand une alerte apparaît
   useEffect(() => {
     if (cluster) {
-      // Animer l'apparition de l'alerte
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }).start();
       
-      // Jouer le son d'alerte
       const playAlertSound = async () => {
         if (soundLoadedRef.current) {
           try {
-            console.log('▶️ Lecture du son d\'alerte de cluster...');
-            await playSound('clusteralert', 0.2); // Volume à 20%
+            await playSound('clusteralert', 0.2);
           } catch (e) {
-            console.error('❌ Erreur lors de la lecture du son d\'alerte:', e);
           }
         }
       };
@@ -79,13 +76,13 @@ const ClusterAlert = ({ cluster, distance, onDismiss, onStillPresent }) => {
         </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={[styles.button, styles.stillPresentButton]}
+            style={[styles.button, { backgroundColor: buttonColor }]}
             onPress={onStillPresent}
           >
             <Text style={styles.buttonText}>Encore présent</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.button, styles.notPresentButton]}
+            style={[styles.button, { backgroundColor: buttonColor }]}
             onPress={onDismiss}
           >
             <Text style={styles.buttonText}>Plus présent</Text>
@@ -96,7 +93,6 @@ const ClusterAlert = ({ cluster, distance, onDismiss, onStillPresent }) => {
   );
 };
 
-// Styles inchangés
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
@@ -144,12 +140,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     minWidth: 120,
-  },
-  stillPresentButton: {
-    backgroundColor: '#f39c12',
-  },
-  notPresentButton: {
-    backgroundColor: '#2ecc71',
   },
   buttonText: {
     color: 'white',

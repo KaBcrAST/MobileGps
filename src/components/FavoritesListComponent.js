@@ -1,5 +1,5 @@
 // FavoritesListComponent.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
@@ -19,8 +19,10 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
   const { user } = useAuth();
   const hasFetchedRef = useRef(false);
   const navigation = useNavigation();
+  const refreshIntervalRef = useRef(null);
 
-  const fetchFavorites = async (force = false) => {
+  // Utiliser useCallback pour la fonction fetchFavorites afin qu'elle soit mémorisée
+  const fetchFavorites = useCallback(async (force = false) => {
     if (loading && !force) return;
     if (hasFetchedRef.current && !force && favorites.length > 0) return;
 
@@ -72,13 +74,53 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [loading, favorites.length, user]);
 
+  // Fonction pour rafraîchir les données utilisateur avec useCallback
+  const refreshUserData = useCallback(async () => {
+    try {
+      console.log("Rafraîchissement des données utilisateur...");
+      await fetchFavorites(true);
+      return true;
+    } catch (error) {
+      console.error("Erreur lors du rafraîchissement des données:", error);
+      return false;
+    }
+  }, [fetchFavorites]);
+
+  // Configuration du rafraîchissement automatique avec cleanup approprié
+  useEffect(() => {
+    // Définir la fonction de rafraîchissement au niveau global
+    if (typeof window !== 'undefined') {
+      window.refreshFavoritesList = refreshUserData;
+    }
+
+    // Configuration d'un intervalle pour rafraîchir les données périodiquement
+    refreshIntervalRef.current = setInterval(() => {
+      refreshUserData().catch(error => {
+        console.error("Erreur lors du rafraîchissement automatique:", error);
+      });
+    }, 60000); // Rafraîchir toutes les minutes
+
+    // Nettoyage lors du démontage du composant
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+      
+      if (typeof window !== 'undefined' && window.refreshFavoritesList) {
+        window.refreshFavoritesList = undefined;
+      }
+    };
+  }, [refreshUserData]);
+
+  // Chargement initial des favoris
   useEffect(() => {
     if (!hasFetchedRef.current) {
       fetchFavorites();
     }
-  }, []);
+  }, [fetchFavorites]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -143,14 +185,11 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
       
       console.log('Itinéraire direct reçu avec succès');
       
-      // SOLUTION: Utiliser deux approches alternatives selon le contexte
-      
-      // Option 1: Si onSelectRoute est défini, utiliser le callback directement
+      // Utiliser l'approche appropriée selon le contexte
       if (onSelectRoute) {
         console.log("Utilisation du callback onSelectRoute");
         onSelectRoute(resultData);
       } 
-      // Option 2: Sinon, utiliser la navigation vers l'écran Map avec les params
       else if (navigation) {
         console.log("Navigation vers l'écran Map avec params");
         navigation.navigate('Map', {
