@@ -17,12 +17,10 @@ let soundEnabled = true;
 const isSoundEnabled = async () => {
   try {
     const savedPref = await AsyncStorage.getItem(SOUND_ENABLED_KEY);
-    console.log(`📚 Préférence sonore récupérée: "${savedPref}"`);
     
     // Évaluer clairement la valeur stockée
     if (savedPref !== null) {
       soundEnabled = savedPref === 'true';
-      console.log(`🔊 État sonore défini à: ${soundEnabled}`);
     } else {
       console.log(`🔊 Aucune préférence trouvée, utilisation de la valeur par défaut: ${soundEnabled}`);
     }
@@ -49,7 +47,6 @@ const setSoundEnabled = async (enabled) => {
     const valueToStore = enabled ? 'true' : 'false';
     await AsyncStorage.setItem(SOUND_ENABLED_KEY, valueToStore);
     
-    console.log(`🔊 Sons ${enabled ? 'activés' : 'désactivés'} (valeur stockée: ${valueToStore})`);
     
     if (!enabled) {
       // Si on désactive le son, arrêter tous les sons en cours
@@ -79,7 +76,6 @@ const setupTrackService = async () => {
       staysActiveInBackground: false,
       shouldDuckAndroid: true,
     });
-    console.log(`✅ Système audio initialisé avec succès (sons ${soundEnabled ? 'activés' : 'désactivés'})`);
     return true;
   } catch (error) {
     console.error('❌ Échec de l\'initialisation audio:', error);
@@ -105,7 +101,6 @@ const loadSound = async (id, source, title = 'Sound Effect') => {
     
     // Stocker le son dans le cache
     soundCache[id] = { sound, title };
-    console.log(`🔊 Son "${title}" (${id}) chargé avec succès`);
     return true;
   } catch (error) {
     console.error(`❌ Échec du chargement du son "${id}":`, error);
@@ -125,7 +120,6 @@ const playSound = async (id, volume = 0.1) => {
   
   // Vérifier si les sons sont activés
   if (!soundEnabled) {
-    console.log(`⏭️ Son "${id}" ignoré (sons désactivés) - état actuel: ${soundEnabled}`);
     return false;
   }
   
@@ -154,7 +148,6 @@ const playSound = async (id, volume = 0.1) => {
     
     // Jouer le son
     await sound.playAsync();
-    console.log(`▶️ Lecture du son "${title}" (${id}) à volume ${volume} - état sonore: ${soundEnabled}`);
     return true;
   } catch (error) {
     console.error(`❌ Échec de lecture du son "${id}":`, error);
@@ -176,7 +169,6 @@ const stopAllSounds = async () => {
         await sound.stopAsync();
       }
     }
-    console.log('⏹️ Tous les sons ont été arrêtés');
     return true;
   } catch (error) {
     console.error('❌ Échec de l\'arrêt des sons:', error);
@@ -196,7 +188,6 @@ const cleanupPlayer = async () => {
       await sound.unloadAsync();
       delete soundCache[id];
     }
-    console.log('🧹 Ressources audio nettoyées');
     return true;
   } catch (error) {
     console.error('❌ Échec du nettoyage audio:', error);

@@ -106,13 +106,11 @@ const extractQRContent = (data) => {
  */
 export const decodeQRCode = async (imageUri) => {
   try {
-    console.log("Préparation de l'image pour décodage...");
     const { manipResult, base64Image } = await prepareImage(imageUri);
     
     // Essayer les différentes méthodes dans l'ordre
     let qrData = null;
     
-    console.log("Tentative de décodage via FormData...");
     try {
       const formDataResult = await decodeWithFormData(manipResult);
       if (formDataResult) {
@@ -123,7 +121,6 @@ export const decodeQRCode = async (imageUri) => {
       console.error("Erreur avec FormData:", error);
     }
     
-    console.log("Tentative de décodage via URL encoded...");
     try {
       const urlEncodedResult = await decodeWithURLEncoded(base64Image);
       if (urlEncodedResult) {
@@ -134,7 +131,6 @@ export const decodeQRCode = async (imageUri) => {
       console.error("Erreur avec URL encoded:", error);
     }
     
-    console.log("Tentative de décodage avec ZXing...");
     try {
       const zxingResult = await decodeWithZXing();
       if (zxingResult) {

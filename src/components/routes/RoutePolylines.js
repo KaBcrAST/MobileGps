@@ -16,7 +16,6 @@ const RoutePolylines = ({
   setActiveRoute, 
 }) => {
   const adjustedCoordinates = useRef(null);
-  // MODIFICATION: Retirer currentSegment et ne garder que remainingSegment
   const [remainingSegment, setRemainingSegment] = useState([]);
   const previousUserPosition = useRef(null);
   const lastClosestPointIndex = useRef(0);
@@ -29,7 +28,6 @@ const RoutePolylines = ({
       adjustedCoordinates.current = activeRoute.coordinates;
       lastClosestPointIndex.current = 0;
       offRouteCounter.current = 0; 
-      // AJOUT: Initialiser remainingSegment avec toutes les coordonnées au chargement d'un itinéraire
       setRemainingSegment(activeRoute.coordinates);
     } else {
       adjustedCoordinates.current = null;
@@ -109,7 +107,6 @@ const RoutePolylines = ({
     const searchStart = Math.max(0, closestPointIndex - 5);
     const searchEnd = Math.min(routeCoords.length, closestPointIndex + 30);
     
-    // Trouver le point le plus proche
     for (let i = searchStart; i < searchEnd; i++) {
       const distance = calculateDistance(
         location.coords.latitude,
@@ -124,16 +121,11 @@ const RoutePolylines = ({
       }
     }
     
-    // MODIFICATION: N'afficher que les segments restants
     if (closestPointIndex > lastClosestPointIndex.current) {
-      // L'utilisateur a progressé sur la route, mettre à jour le segment restant
-      // Conserver 1 point en arrière pour éviter les discontinuités
       const keepFromIndex = Math.max(0, closestPointIndex - 1);
       
       setRemainingSegment([
-        // Ajouter la position actuelle au début du segment restant pour une connexion fluide
         { latitude: location.coords.latitude, longitude: location.coords.longitude },
-        // Puis ajouter tous les points restants sur le trajet à partir du point le plus proche
         ...routeCoords.slice(keepFromIndex)
       ]);
       
@@ -145,7 +137,6 @@ const RoutePolylines = ({
       longitude: location.coords.longitude 
     };
 
-    // Gérer la récalculation de l'itinéraire si hors trajectoire
     if (minDistance > 50) {
       offRouteCounter.current++;
       
@@ -174,13 +165,12 @@ const RoutePolylines = ({
     ));
   }
 
-  // MODIFICATION: Supprimer le rendu de currentSegment et ne garder que remainingSegment
   if (isNavigating && activeRoute && remainingSegment.length > 1) {
     return (
       <Polyline
         coordinates={remainingSegment}
         strokeWidth={6}
-        strokeColor="#3498db" // Couleur plus vive pour meilleure visibilité
+        strokeColor="rgb(74, 58, 255)" 
         zIndex={2}
         lineCap="round"
         lineJoin="round"

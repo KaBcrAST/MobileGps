@@ -9,11 +9,9 @@ import { geocodeAddress } from './GeolocationService';
  */
 export const processQRData = async (data, navigationHandler, searchHandler) => {
   try {
-    console.log("Traitement des données QR:", data);
     
     // Format Expo
     if (data.includes('exp://')) {
-      console.log("Format Expo détecté");
       const expoData = processExpoFormat(data);
       if (expoData) {
         await navigationHandler(expoData);
@@ -23,7 +21,6 @@ export const processQRData = async (data, navigationHandler, searchHandler) => {
     
     // Format gpsapp://
     if (data.startsWith('gpsapp://')) {
-      console.log("Format gpsapp:// détecté");
       const result = await processGpsAppFormat(data, navigationHandler, searchHandler);
       if (result) return;
     }
@@ -106,7 +103,6 @@ const processGpsAppFormat = async (data, navigationHandler, searchHandler) => {
         const geocoded = await geocodeAddress(destination);
         
         if (geocoded) {
-          console.log("Adresse géocodée avec succès:", geocoded);
           await navigationHandler({
             latitude: geocoded.latitude,
             longitude: geocoded.longitude,

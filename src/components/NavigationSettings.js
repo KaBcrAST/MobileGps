@@ -10,6 +10,7 @@ import FavoritesListComponent from './FavoritesListComponent';
 const SOUND_ENABLED_KEY = 'soundEnabled';
 const FAVORITES_AUTO_SYNC_KEY = 'favoritesAutoSync';
 const FAVORITES_SORT_BY_KEY = 'favoritesSortBy';
+const THEME_COLOR = 'rgb(74, 58, 255)';
 
 const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) => {
   const navigation = useNavigation();
@@ -35,7 +36,6 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
         setAvoidTolls(JSON.parse(savedPreference));
       }
     } catch (error) {
-      console.error('Error loading toll preference:', error);
     }
   };
 
@@ -44,7 +44,6 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
       const isEnabled = await isSoundEnabled();
       setSoundEnabledState(isEnabled);
     } catch (error) {
-      console.error('Error loading sound preference:', error);
     }
   };
 
@@ -55,7 +54,6 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
         setFavoritesAutoSync(JSON.parse(autoSync));
       }
     } catch (error) {
-      console.error('Error loading favorites preferences:', error);
     }
   };
 
@@ -87,7 +85,6 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
         onTollPreferenceChange(value);
       }
     } catch (error) {
-      console.error('Error saving toll preference:', error);
     }
   };
 
@@ -95,10 +92,7 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
     try {
       setSoundEnabledState(value);
       await setSoundEnabled(value);
-      
-      console.log(`🔊 Sons ${value ? 'activés' : 'désactivés'}`);
     } catch (error) {
-      console.error('Error saving sound preference:', error);
     }
   };
 
@@ -106,32 +100,24 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
     try {
       setFavoritesAutoSync(value);
       await AsyncStorage.setItem(FAVORITES_AUTO_SYNC_KEY, JSON.stringify(value));
-      
-      console.log(`🌟 Synchronisation automatique des favoris ${value ? 'activée' : 'désactivée'}`);
     } catch (error) {
-      console.error('Error saving favorites auto sync preference:', error);
     }
   };
 
   const handleSelectRoute = (routeData) => {
-    console.log('Itinéraire sélectionné:', routeData);
-    
     setShowFavoritesModal(false);
     
     if (!routeData || !routeData.route) {
-      console.error("Données d'itinéraire incomplètes");
       Alert.alert("Erreur", "Données d'itinéraire incomplètes");
       return;
     }
     
     if (onRouteSelected) {
-      console.log("Utilisation du callback pour la sélection de route");
       onRouteSelected(routeData);
       return;
     }
     
     try {
-      console.log("Utilisation de la navigation directe");
       navigation.navigate('Map', {
         routeData: routeData,
         destination: {
@@ -146,7 +132,6 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
         autoStart: true
       });
     } catch (error) {
-      console.error("Erreur de navigation:", error);
       Alert.alert("Erreur", "Impossible de naviguer vers cette destination");
     }
   };
@@ -186,8 +171,8 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
               <Switch
                 value={avoidTolls}
                 onValueChange={handleTollToggle}
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={avoidTolls ? "#2196F3" : "#f4f3f4"}
+                trackColor={{ false: "#767577", true: THEME_COLOR }}
+                thumbColor={avoidTolls ? THEME_COLOR : "#f4f3f4"}
                 ios_backgroundColor="#3e3e3e"
                 accessible={true}
                 accessibilityLabel={avoidTolls ? "Ne pas éviter les péages" : "Éviter les péages"}
@@ -225,8 +210,8 @@ const NavigationSettings = ({ onTollPreferenceChange, onRouteSelected = null }) 
               <Switch
                 value={soundEnabled}
                 onValueChange={handleSoundToggle}
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={soundEnabled ? "#2196F3" : "#f4f3f4"}
+                trackColor={{ false: "#767577", true: THEME_COLOR }}
+                thumbColor={soundEnabled ? THEME_COLOR : "#f4f3f4"}
                 ios_backgroundColor="#3e3e3e"
                 accessible={true}
                 accessibilityLabel={soundEnabled ? "Désactiver les sons" : "Activer les sons"}
@@ -340,7 +325,7 @@ const styles = StyleSheet.create({
   },
   favoriteActionText: {
     fontSize: 15,
-    color: '#2196F3',
+    color: THEME_COLOR,
   },
   modalContainer: {
     flex: 1,

@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const API_URL = 'https://react-gpsapi.vercel.app/api';
-
+import { API_URL } from '../config/config';
 
 // Export the decode polyline utility
 export const decodePolyline = (encoded) => {
@@ -51,11 +49,8 @@ export const decodePolyline = (encoded) => {
 export const navigationService = {
   decodePolyline,
 
-
-
   async getSpeedLimit(location, retries = 2) {
     if (!location?.coords?.latitude || !location?.coords?.longitude) {
-      console.error('Invalid location data');
       return null;
     }
 
@@ -65,45 +60,32 @@ export const navigationService = {
       longitude: Number(longitude).toFixed(6)
     };
 
-    console.log('📍 Fetching speed limit for:', {
-      ...formattedCoords,
-      accuracy,
-      speed: location.coords.speed
-    });
-
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const response = await axios.get(`${API_URL}/speed-limit`, {
+        const response = await axios.get(`${API_URL}/api/speed-limit`, {
           params: { 
             latitude: formattedCoords.latitude,
             longitude: formattedCoords.longitude,
             accuracy
           },
-          timeout: 5000, // Reduced timeout
+          timeout: 5000,
           headers: {
             'Accept': 'application/json'
           }
         });
 
-        console.log('✅ Speed limit response:', response.data);
         return response.data.speedLimit;
 
       } catch (error) {
         const isTimeout = error.code === 'ECONNABORTED' || error.message.includes('timeout');
         const isLastAttempt = attempt === retries;
 
-        console.warn(`❌ Speed limit attempt ${attempt + 1}/${retries + 1} failed:`, {
-          isTimeout,
-          message: error.message
-        });
-
         if (isLastAttempt) {
-          console.error('❌ All speed limit attempts failed');
           return null;
         }
 
         // Wait before retry (exponential backoff)
-        await wait(1000 * Math.pow(2, attempt));
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
       }
     }
   },
@@ -121,5 +103,8 @@ export const navigationService = {
     return `${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
   }
 };
+
+// Helper function for waiting between retries
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 

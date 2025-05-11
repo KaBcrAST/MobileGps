@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../config/config';
 
 const AuthContext = createContext();
 
@@ -38,7 +39,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (data) => {
     try {
       if (data.user && !data.user._id) {
-        const response = await fetch('https://react-gpsapi.vercel.app/auth/me', {
+        const response = await fetch(`${API_URL}/auth/me`, {
           headers: {
             'Authorization': `Bearer ${data.token}`
           }
@@ -75,12 +76,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const getToken = async () => {
+    // Si le token est déjà en mémoire
+    if (token) {
+      return token;
+    }
+    
+    // Sinon essayer de le récupérer depuis AsyncStorage
+    try {
+      const storedToken = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
+      return storedToken;
+    } catch (error) {
+      return null;
+    }
+  };
+
   const value = {
     user,
     token,
     loading,
     login,
-    logout
+    logout,
+    getToken
   };
 
   return (

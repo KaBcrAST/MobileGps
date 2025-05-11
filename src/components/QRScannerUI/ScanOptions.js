@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
 
+const THEME_COLOR = 'rgb(74, 58, 255)';
+
 const ScanOptions = ({ onTakePicture, onPickImage, isProcessing }) => {
   
   const handleTakePicture = async () => {
@@ -26,7 +28,6 @@ const ScanOptions = ({ onTakePicture, onPickImage, isProcessing }) => {
         onTakePicture(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("Erreur lors de la prise de photo:", error);
       Alert.alert("Erreur", "Impossible de prendre la photo: " + error.message);
     }
   };
@@ -51,7 +52,6 @@ const ScanOptions = ({ onTakePicture, onPickImage, isProcessing }) => {
         onPickImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.error("Erreur lors de la sélection d'image:", error);
       Alert.alert("Erreur", "Impossible de sélectionner l'image: " + error.message);
     }
   };
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   cameraOption: {
-    backgroundColor: '#2196F3',
+    backgroundColor: THEME_COLOR,
   },
   galleryOption: {
     backgroundColor: '#4CAF50',

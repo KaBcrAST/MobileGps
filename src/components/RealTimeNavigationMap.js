@@ -30,7 +30,6 @@ const Map = ({
   onRouteSelect,
   followsUserLocation,
 }) => {
-  // États locaux
   const [loading, setLoading] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
   const [mapConfig, setMapConfig] = useState(null);
@@ -55,17 +54,14 @@ const Map = ({
     coordinates: activeRoute?.coordinates 
   });
 
-  // Fonction pour gérer les modes de vue
   const handleViewMode = (mode) => {
-    console.log(`Mode vue: ${mode}`);
-    // Implémentation simplifiée selon le mode
     if (mode === 'overhead' && mapRef?.current && location?.coords) {
       mapRef.current.animateCamera({
         center: {
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         },
-        pitch: 0, // Vue du dessus
+        pitch: 0,
         altitude: NORMAL_ALTITUDE * 1.5,
         zoom: 17
       }, { duration: 500 });
@@ -82,15 +78,7 @@ const Map = ({
     }
   };
 
-  // Logging pour le débogage
-  useEffect(() => {
-    console.log('🗺️ Map Component: Navigation state changed to', isNavigating);
-    return () => {
-      console.log('🗺️ Map Component: Cleanup triggered');
-    };
-  }, [isNavigating]);
-
-  // Récupérer les clusters
+ 
   useEffect(() => {
     const fetchClusters = async () => {
       if (!location?.coords) return;
@@ -132,21 +120,12 @@ const Map = ({
     return () => clearInterval(interval);
   }, [location]);
 
-  // Gérer l'affichage de la route
   useEffect(() => {
     setShowRoute(isNavigating);
   }, [isNavigating]);
 
-  // Pour le débogage
-  useEffect(() => {
-    console.log('Navigation state changed:', { 
-      isNavigating, 
-      hasRoute: !!activeRoute, 
-      routeLength: activeRoute?.coordinates?.length || 0
-    });
-  }, [isNavigating, activeRoute]);
+ 
 
-  // Fonction de gestion du chargement de la carte - MODIFIÉE
   const handleMapReady = () => {
     setIsMapReady(true);
     setLoading(false);

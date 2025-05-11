@@ -12,7 +12,7 @@ const Speedometer = ({ speed }) => {
 
 const styles = StyleSheet.create({
   speedometer: {
-    backgroundColor: 'rgb(74, 58, 255)', // Couleur modifiée ici
+    backgroundColor: 'rgb(74, 58, 255)',
     width: 70,
     height: 70,
     borderRadius: 35,

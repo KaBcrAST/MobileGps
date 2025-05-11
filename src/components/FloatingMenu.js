@@ -1,24 +1,23 @@
-import { useState, useRef } from 'react';
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, Animated, StyleSheet, Dimensions, Text, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ProfileSection from './ProfileSection';
+import ProfileSection from './ProfileSection/ProfileSection';
 import NavigationSettings from './NavigationSettings';
 
 const { width } = Dimensions.get('window');
+const THEME_COLOR = 'rgb(74, 58, 255)';
 
 const FloatingMenu = ({ 
   onTollPreferenceChange, 
   avoidTolls, 
   isNextToSearchBar = false, 
   onOpenQRScanner,
-  navigation, // Add navigation to the props
-  onRouteSelected // Add this if needed for route handling
+  navigation,
+  onRouteSelected
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const slideAnim = useRef(new Animated.Value(-300)).current;
+  const [isOpen, setIsOpen] = React.useState(false); // Utilisation explicite de React.useState
+  const slideAnim = React.useRef(new Animated.Value(-300)).current; // Utilisation explicite de React.useRef
   
-
   const toggleMenu = () => {
     Animated.spring(slideAnim, {
       toValue: isOpen ? -300 : 0,
@@ -30,7 +29,6 @@ const FloatingMenu = ({
   };
 
   const handleQRScannerPress = () => {
-
     if (isOpen) {
       toggleMenu();
     }
@@ -54,7 +52,7 @@ const FloatingMenu = ({
           accessibilityLabel="Ouvrir le menu"
           accessibilityHint="Double-tapez pour ouvrir le menu latéral"
         >
-          <Ionicons name="chevron-forward" size={24} color="#000" />
+          <Ionicons name="chevron-forward" size={24} color={THEME_COLOR} />
         </TouchableOpacity>
         
         {isOpen && (
@@ -64,14 +62,15 @@ const FloatingMenu = ({
               paddingLeft: isOpen ? 20 : 0
             }]}
           >
-            <ProfileSection />
+            <ProfileSection themeColor={THEME_COLOR} />
             
             <NavigationSettings 
-        avoidTolls={avoidTolls}
-        onTollPreferenceChange={onTollPreferenceChange}
-        navigation={navigation}
-        onRouteSelected={onRouteSelected}
-      />
+              avoidTolls={avoidTolls}
+              onTollPreferenceChange={onTollPreferenceChange}
+              navigation={navigation}
+              onRouteSelected={onRouteSelected}
+              themeColor={THEME_COLOR}
+            />
 
             <TouchableOpacity 
               style={styles.qrScannerButton}
@@ -105,17 +104,18 @@ const FloatingMenu = ({
         accessibilityHint="Double-tapez pour ouvrir le menu latéral"
       >
         <View style={styles.iconContainer}>
-          <Ionicons name="chevron-forward" size={24} color="#000" />
+          <Ionicons name="chevron-forward" size={24} color={THEME_COLOR} />
         </View>
       </TouchableOpacity>
 
-      <ProfileSection />
+      <ProfileSection themeColor={THEME_COLOR} />
       
       <NavigationSettings 
         avoidTolls={avoidTolls}
         onTollPreferenceChange={onTollPreferenceChange}
-        navigation={navigation}  // Transmettre l'objet navigation
-        onRouteSelected={onRouteSelected}  // Transmettre la fonction onRouteSelected
+        navigation={navigation}
+        onRouteSelected={onRouteSelected}
+        themeColor={THEME_COLOR}
       />
       
       <TouchableOpacity 
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
   qrScannerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2196F3',
+    backgroundColor: THEME_COLOR,
     borderRadius: 10,
     padding: 12,
     marginHorizontal: 20,

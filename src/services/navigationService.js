@@ -30,7 +30,6 @@ export const startDirectNavigation = async (currentLocation, destination, avoidT
     });
 
     if (response.data && response.data.routes && response.data.routes.length > 0) {
-      console.log("Itinéraire direct reçu avec succès");
       // Nous prenons le premier itinéraire suggéré
       const route = response.data.routes[0];
       
@@ -47,7 +46,6 @@ export const startDirectNavigation = async (currentLocation, destination, avoidT
           durationWithTraffic: route.durationWithTraffic || route.duration
         };
         
-        console.log("Informations de trafic détectées:", trafficInfo);
       }
       
       return {

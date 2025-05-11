@@ -35,12 +35,11 @@ const FavoritesMenu = ({
           />
         ))}
         
-        {/* Bouton pour ajouter un nouveau favori */}
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={onAddNewFavorite}
         >
-          <Icon name="add" size={24} color="#3498db" />
+          <Icon name="add" size={24} color="rgb(74, 58, 255)" />
           <Text style={styles.actionButtonText}>Ajouter un favori</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -55,7 +54,7 @@ const FavoriteItem = ({ item, onSelect, onEdit }) => (
     onPress={() => onSelect(item)}
   >
     <View style={styles.iconContainer}>
-      <Icon name={item.icon} size={24} color="#3498db" />
+      <Icon name={item.icon} size={24} color="rgb(74, 58, 255)" />
     </View>
     <View style={styles.historyTextContainer}>
       <Text style={styles.historyName}>{item.name}</Text>
@@ -139,7 +138,7 @@ const styles = StyleSheet.create({
   actionButtonText: {
     marginLeft: 15,
     fontSize: 16,
-    color: '#3498db',
+    color: 'rgb(74, 58, 255)',
   },
   editButton: {
     padding: 10,

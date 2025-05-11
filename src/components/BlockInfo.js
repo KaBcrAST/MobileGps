@@ -20,7 +20,6 @@ const BlockInfo = ({
   onEndNavigation,
   onNearDestination
 }) => {
-  // Utiliser notre hook personnalisé pour gérer la progression
   const { 
     routeDetails, 
     trafficInfo, 
@@ -34,7 +33,6 @@ const BlockInfo = ({
     onNearDestination
   });
 
-  // Utiliser les données actives ou les données récupérées
   const duration = activeRoute?.duration || routeDetails?.duration;
   const distance = activeRoute?.distance || routeDetails?.distance;
   const traffic = activeRoute?.traffic || routeDetails?.traffic || trafficInfo;
@@ -43,7 +41,6 @@ const BlockInfo = ({
     <View style={styles.container}>
       {isNavigating ? (
         <View style={styles.wazeContainer}>
-          {/* Partie supérieure avec la vitesse et l'heure d'arrivée */}
           <View style={styles.topInfoRow}>
             <View style={styles.speedSection}>
               <Speedometer speed={speed} />
@@ -52,16 +49,12 @@ const BlockInfo = ({
             <RouteDetails duration={duration} distance={distance} />
           </View>
           
-          {/* Barre de progression dynamique */}
           <ProgressBar progressPercent={progressPercent} />
           
-          {/* Information sur le trafic */}
           <TrafficInfo traffic={traffic} />
           
-          {/* Information sur la durée restante */}
           <DurationInfo duration={duration} />
           
-          {/* Boutons d'action */}
           <View style={styles.actionButtonsContainer}>
             <EndButton onPress={onEndNavigation} />
           </View>

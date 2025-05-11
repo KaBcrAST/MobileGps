@@ -6,12 +6,9 @@ import FavoritesMenu from './FavoritesMenu';
 import EditFavoriteModal from './EditFavoriteModal';
 import useSearchBarLogic from './useSearchBarLogic';
 
-const windowHeight = Dimensions.get('window').height;
-const windowWidth = Dimensions.get('window').width;
 
 const SearchBar = ({ onPlaceSelect, containerStyle }) => {
   const {
-    // États
     isSearchFocused,
     searchQuery,
     predictions,
@@ -27,7 +24,6 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
     editAddressPredictions,
     isAddressInputFocused,
     
-    // Handlers
     handleSearch,
     handleSelectPlace,
     toggleSearchPosition,
@@ -47,7 +43,6 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
 
   return (
     <>
-      {/* Backdrop semi-transparent - en premier (plus bas niveau z-index) */}
       {isSearchFocused && (
         <TouchableOpacity 
           style={styles.backdrop}
@@ -56,7 +51,6 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
         />
       )}
 
-      {/* Menu des favoris - rendu en second (niveau z-index intermédiaire) */}
       {isSearchFocused && (
         <Animated.View 
           style={[
@@ -74,7 +68,6 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
         </Animated.View>
       )}
 
-      {/* Barre de recherche - rendue en troisième (niveau z-index supérieur) */}
       <Animated.View 
         style={[
           styles.searchContainer,
@@ -90,18 +83,15 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
           onFocus={() => toggleSearchPosition(true)}
           onClear={() => {
             if (typeof setSearchQuery === 'function') {
-              setSearchQuery('');  // Assurez-vous que setSearchQuery est défini
-              setPredictions([]);  // Et setPredictions aussi
+              setSearchQuery('');  
+              setPredictions([]);  
             } else {
-              console.warn("setSearchQuery n'est pas une fonction");
-              // Fallback: essayer d'utiliser handleSearch directement
               handleSearch('');
             }
           }}
         />
       </Animated.View>
 
-      {/* Liste des prédictions - rendue en dernier (niveau z-index le plus élevé) */}
       {isSearchFocused && predictions.length > 0 && (
         <View style={styles.predictionsContainer}>
           <PredictionsList 
@@ -112,7 +102,6 @@ const SearchBar = ({ onPlaceSelect, containerStyle }) => {
         </View>
       )}
 
-      {/* Modal d'édition */}
       <EditFavoriteModal
         visible={modalVisible}
         selectedItem={selectedItem}
@@ -137,16 +126,16 @@ const styles = StyleSheet.create({
     top: '8%',
     left: 20,
     right: 20,
-    zIndex: 1002, // Supérieur au menu des favoris
-    elevation: 7, // Pour Android
+    zIndex: 1002, 
+    elevation: 7,
   },
   predictionsContainer: {
     position: 'absolute',
-    top: '13%', // Ajusté pour se positionner sous la barre de recherche
+    top: '13%', 
     left: 20,
     right: 20,
-    zIndex: 1003, // Supérieur à tout le reste
-    elevation: 8, // Pour Android
+    zIndex: 1003,
+    elevation: 8, 
   },
   predictions: {
     backgroundColor: 'white',
@@ -163,8 +152,8 @@ const styles = StyleSheet.create({
     right: 20,
     backgroundColor: 'white',
     borderRadius: 10,
-    zIndex: 1001, // Inférieur aux prédictions mais supérieur au backdrop
-    elevation: 6, // Pour Android
+    zIndex: 1001,
+    elevation: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -178,8 +167,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.3)',
-    zIndex: 1000, // Le plus bas
-    elevation: 5, // Pour Android
+    zIndex: 1000,
+    elevation: 5,
   },
 });
 

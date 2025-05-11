@@ -1,13 +1,28 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 
-const ProgressBar = ({ progressPercent }) => {
+const ProgressBar = ({ totalDistance, remainingDistance }) => {
+  const progressPercent = useMemo(() => {
+    if (!totalDistance || !remainingDistance || totalDistance <= 0) {
+      return '0%';
+    }
+    
+    const traveledDistance = totalDistance - remainingDistance;
+    
+    if (traveledDistance < 0) return '0%';
+    
+    if (traveledDistance > totalDistance) return '100%';
+    
+    const percent = (traveledDistance / totalDistance) * 100;
+    return `${percent}%`;
+  }, [totalDistance, remainingDistance]);
+
   return (
     <View style={styles.container}>
-      <Animated.View 
+      <View 
         style={[styles.progress, { width: progressPercent }]} 
       />
-      <Animated.View 
+      <View 
         style={[styles.indicator, { left: progressPercent }]} 
       />
     </View>
@@ -29,7 +44,7 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: '#1A73E8',
+    backgroundColor: 'rgb(74, 58, 255)', 
     borderRadius: 2,
     height: '100%',
   },
@@ -39,7 +54,7 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#1A73E8',
+    backgroundColor: 'rgb(74, 58, 255)', 
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

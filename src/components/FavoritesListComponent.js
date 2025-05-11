@@ -21,7 +21,6 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
   const navigation = useNavigation();
   const refreshIntervalRef = useRef(null);
 
-  // Utiliser useCallback pour la fonction fetchFavorites afin qu'elle soit mémorisée
   const fetchFavorites = useCallback(async (force = false) => {
     if (loading && !force) return;
     if (hasFetchedRef.current && !force && favorites.length > 0) return;
@@ -76,33 +75,24 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
     }
   }, [loading, favorites.length, user]);
 
-  // Fonction pour rafraîchir les données utilisateur avec useCallback
   const refreshUserData = useCallback(async () => {
     try {
-      console.log("Rafraîchissement des données utilisateur...");
       await fetchFavorites(true);
       return true;
     } catch (error) {
-      console.error("Erreur lors du rafraîchissement des données:", error);
       return false;
     }
   }, [fetchFavorites]);
 
-  // Configuration du rafraîchissement automatique avec cleanup approprié
   useEffect(() => {
-    // Définir la fonction de rafraîchissement au niveau global
     if (typeof window !== 'undefined') {
       window.refreshFavoritesList = refreshUserData;
     }
 
-    // Configuration d'un intervalle pour rafraîchir les données périodiquement
     refreshIntervalRef.current = setInterval(() => {
-      refreshUserData().catch(error => {
-        console.error("Erreur lors du rafraîchissement automatique:", error);
-      });
-    }, 60000); // Rafraîchir toutes les minutes
+      refreshUserData().catch(() => {});
+    }, 60000);
 
-    // Nettoyage lors du démontage du composant
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
@@ -115,7 +105,6 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
     };
   }, [refreshUserData]);
 
-  // Chargement initial des favoris
   useEffect(() => {
     if (!hasFetchedRef.current) {
       fetchFavorites();
@@ -127,13 +116,10 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
     fetchFavorites(true);
   };
 
-  // Fonction pour lancer la navigation depuis un favori sélectionné
   const handleSelectFavorite = async (favorite) => {
     try {
-      // Indiquer le début de la navigation
       setNavigating(true);
       
-      // Récupérer la position actuelle
       const currentPosition = await getCurrentLocation();
       
       if (!currentPosition) {
@@ -145,7 +131,6 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
         return;
       }
       
-      // Construire la destination en format compatible
       const destination = {
         latitude: parseFloat(favorite.destination.lat || favorite.destination.latitude),
         longitude: parseFloat(favorite.destination.lng || favorite.destination.longitude),
@@ -153,27 +138,21 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
         address: favorite.destination.address || favorite.destination.name || `Coordonnées GPS: ${favorite.destination.lat}, ${favorite.destination.lng}`
       };
       
-      // Vérifier que les coordonnées sont valides
       if (isNaN(destination.latitude) || isNaN(destination.longitude)) {
         throw new Error('Coordonnées de destination invalides');
       }
       
-      // Marquer le favori comme utilisé (de façon non bloquante)
-      markFavoriteAsUsed(favorite._id).catch(err => 
-        console.error("Erreur lors du marquage du favori:", err)
-      );
+      markFavoriteAsUsed(favorite._id).catch(() => {});
       
-      // Obtenir l'itinéraire pour la navigation directe
       const route = await startDirectNavigation(
         {
           latitude: currentPosition.coords.latitude,
           longitude: currentPosition.coords.longitude
         },
         destination,
-        false // Ne pas éviter les péages
+        false
       );
       
-      // Préparer les données pour la navigation
       const resultData = {
         ...destination,
         route: route,
@@ -183,15 +162,10 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
         mode: favorite.travelMode?.toLowerCase() || "driving"
       };
       
-      console.log('Itinéraire direct reçu avec succès');
-      
-      // Utiliser l'approche appropriée selon le contexte
       if (onSelectRoute) {
-        console.log("Utilisation du callback onSelectRoute");
         onSelectRoute(resultData);
       } 
       else if (navigation) {
-        console.log("Navigation vers l'écran Map avec params");
         navigation.navigate('Map', {
           routeData: resultData,
           startNavigation: true,
@@ -202,27 +176,23 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
         throw new Error("Aucune méthode de navigation disponible");
       }
       
-      // Fermer le panneau des favoris dans tous les cas
       if (onClose) {
         onClose();
       }
       
     } catch (err) {
-      console.error("Erreur lors du démarrage de la navigation:", err);
       Alert.alert(
         "Erreur de navigation", 
         `Impossible de démarrer la navigation: ${err.message}`,
         [{ text: "OK" }]
       );
     } finally {
-      // Réinitialiser l'état de navigation
       setTimeout(() => {
         setNavigating(false);
       }, 500);
     }
   };
   
-  // Fonction pour marquer un favori comme utilisé
   const markFavoriteAsUsed = async (favoriteId) => {
     try {
       const token = await AsyncStorage.getItem('authToken');
@@ -231,12 +201,9 @@ const FavoritesListComponent = ({ onSelectRoute, onClose }) => {
       await axios.post(`${API_URL}/api/favorites/${favoriteId}/use`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-    } catch (err) {
-      console.error('Erreur lors du marquage du favori comme utilisé:', err);
-    }
+    } catch (err) {}
   };
 
-  // Utiliser renderFavoriteItem avec la mise en page d'origine
   const renderFavoriteItem = ({ item }) => (
     <TouchableOpacity
       style={styles.favoriteItem}

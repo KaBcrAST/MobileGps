@@ -39,7 +39,6 @@ const EditFavoriteModal = ({
           />
           
           <View style={styles.modalBody}>
-            {/* Champ pour le titre du favori */}
             <Text style={styles.modalLabel}>Nom du favori:</Text>
             <TextInput
               style={styles.modalInput}
@@ -50,7 +49,6 @@ const EditFavoriteModal = ({
               autoCapitalize="sentences"
             />
             
-            {/* Champ pour l'adresse avec autocomplétion */}
             <Text style={styles.modalLabel}>Adresse:</Text>
             <TextInput
               style={[
@@ -64,7 +62,6 @@ const EditFavoriteModal = ({
               onFocus={onAddressInputFocus}
             />
             
-            {/* Résultats d'autocomplétion pour l'adresse */}
             {isAddressInputFocused && editAddressPredictions.length > 0 && (
               <AddressPredictions 
                 predictions={editAddressPredictions} 
@@ -80,17 +77,15 @@ const EditFavoriteModal = ({
   );
 };
 
-// Sous-composant pour l'en-tête du modal
 const ModalHeader = ({ title, onClose }) => (
   <View style={styles.modalHeader}>
     <Text style={styles.modalTitle}>{title}</Text>
     <TouchableOpacity onPress={onClose}>
-      <Icon name="close" size={24} color="#999" />
+      <Icon name="close" size={24} color="rgb(74, 58, 255)" />
     </TouchableOpacity>
   </View>
 );
 
-// Sous-composant pour les prédictions d'adresse
 const AddressPredictions = ({ predictions, onSelect }) => (
   <ScrollView style={styles.modalPredictionsContainer}>
     {predictions.map((prediction) => (
@@ -99,14 +94,13 @@ const AddressPredictions = ({ predictions, onSelect }) => (
         style={styles.modalPredictionItem}
         onPress={() => onSelect(prediction)}
       >
-        <Icon name="place" size={18} color="#666" style={styles.modalPlaceIcon} />
+        <Icon name="place" size={18} color="rgb(74, 58, 255)" style={styles.modalPlaceIcon} />
         <Text style={styles.modalPredictionText}>{prediction.description}</Text>
       </TouchableOpacity>
     ))}
   </ScrollView>
 );
 
-// Sous-composant pour les boutons du modal
 const ModalButtons = ({ onCancel, onSave }) => (
   <View style={styles.modalButtonContainer}>
     <TouchableOpacity 
@@ -176,7 +170,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   modalInputFocused: {
-    borderColor: '#3498db',
+    borderColor: 'rgb(74, 58, 255)',
     borderWidth: 2,
   },
   modalButtonContainer: {
@@ -195,7 +189,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f1f1',
   },
   modalSaveButton: {
-    backgroundColor: '#3498db',
+    backgroundColor: 'rgb(74, 58, 255)',
   },
   modalButtonText: {
     fontSize: 16,

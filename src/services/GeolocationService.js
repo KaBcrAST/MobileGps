@@ -39,7 +39,6 @@ export const getCurrentLocation = async (options = {}) => {
       throw new Error("Position invalide reçue du service de localisation");
     }
 
-    console.log("Position actuelle obtenue avec succès");
     return position;
     
   } catch (error) {
@@ -77,7 +76,6 @@ export const getCurrentLocation = async (options = {}) => {
  */
 export const geocodeAddress = async (address) => {
   try {
-    console.log("Géocodage de l'adresse:", address);
     // Utilisation de l'API Nominatim d'OpenStreetMap (gratuite)
     const response = await axios.get('https://nominatim.openstreetmap.org/search', {
       params: {

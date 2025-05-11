@@ -119,11 +119,9 @@ export default function NavigationMainScreen({ navigation, route }) {
   // Modifiez la fonction handleQRScanned pour démarrer directement la navigation
 
 const handleQRScanned = async (scannedLocation) => {
-  console.log("Coordonnées scannées:", scannedLocation);
   
   // Cas pour les adresses textuelles (searchTerm)
   if (scannedLocation && scannedLocation.searchTerm) {
-    console.log("Recherche de l'adresse:", scannedLocation.searchTerm);
     setQRScannerVisible(false);
     setSearchQuery && setSearchQuery(scannedLocation.searchTerm);
     return;
@@ -151,7 +149,6 @@ const handleQRScanned = async (scannedLocation) => {
         try {
           // Si un itinéraire est fourni, l'utiliser directement
           if (scannedLocation.route && scannedLocation.route.coordinates) {
-            console.log("Utilisation de la route pré-calculée");
             
             // Utiliser directement la route fournie dans les données scannées
             setActiveRoute(scannedLocation.route);
@@ -167,11 +164,9 @@ const handleQRScanned = async (scannedLocation) => {
             // Activer immédiatement le mode navigation
             setIsNavigating(true);
             
-            console.log("Navigation démarrée avec route préchargée vers:", newDestination.name);
           }
           // Sinon, calculer un itinéraire via l'API
           else {
-            console.log("Calcul d'un itinéraire via l'API");
             
             // Vérifier que location.coords existe
             if (!location || !location.coords) {
@@ -185,7 +180,6 @@ const handleQRScanned = async (scannedLocation) => {
               avoidTolls
             );
             
-            console.log("Route calculée:", directRoute);
             
             // Définir l'itinéraire actif à partir de la réponse de l'API
             setActiveRoute(directRoute);
@@ -201,7 +195,6 @@ const handleQRScanned = async (scannedLocation) => {
             // Activer le mode navigation
             setIsNavigating(true);
             
-            console.log("Navigation directe démarrée vers:", newDestination.name);
           }
         } catch (error) {
           console.error("Erreur lors du démarrage de la navigation directe:", error);
@@ -234,7 +227,6 @@ const handleQRScanned = async (scannedLocation) => {
 
   // Dans votre fonction receveuse, assurez-vous de gérer correctement les données de favoris
   const handleIncomingRouteData = (routeData) => {
-    console.log("Données de route reçues pour navigation:", routeData);
     
     try {
       // Vérifier que nous avons bien les données nécessaires
@@ -273,7 +265,6 @@ const handleQRScanned = async (scannedLocation) => {
       setShowRoutes(false);
       setSelectedRoute(0);
       
-      console.log("Navigation directe activée pour:", newDestination.name);
       
       // 6. Forcer un délai court pour garantir que tous les états sont mis à jour
       setTimeout(() => {
@@ -294,7 +285,6 @@ const handleQRScanned = async (scannedLocation) => {
   // Ajouter un effet pour traiter les paramètres de route s'ils arrivent via navigation
   useEffect(() => {
     if (route.params?.routeData && route.params?.startNavigation) {
-      console.log("Navigation reçue via route.params");
       handleIncomingRouteData(route.params.routeData);
     }
   }, [route.params]);

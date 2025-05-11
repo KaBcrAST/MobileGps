@@ -18,8 +18,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
   const isAndroid = Platform.OS === 'android';
   
   const NAVIGATION_ALTITUDE = isAndroid ? 40 : 60;
-  // Réduire ces valeurs pour rapprocher la caméra en mode normal
-  const NORMAL_ALTITUDE = isAndroid ? 50 : 70; // Réduit de 70/100 à 50/70
+  const NORMAL_ALTITUDE = isAndroid ? 50 : 70; 
   const PREVIEW_ALTITUDE = 1000;
   
   const NAVIGATION_PITCH = 80;
@@ -103,7 +102,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
         pitch: NAVIGATION_PITCH,
         heading: headingToUse,
         altitude: NAVIGATION_ALTITUDE,
-        zoom: isAndroid ? 18.5 : 18 // Custom zoom for navigation
+        zoom: isAndroid ? 18.5 : 18 
       };
     } else {
       return {
@@ -114,7 +113,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
         pitch: NORMAL_PITCH,
         heading: headingToUse,
         altitude: NORMAL_ALTITUDE,
-        zoom: isAndroid ? 18 : 17.5 // Augmenté de 17.5/17 à 18/17.5 pour un zoom plus proche
+        zoom: isAndroid ? 18 : 17.5 
       };
     }
   }, [offsetCoordinates, NAVIGATION_ALTITUDE, NORMAL_ALTITUDE, OFFSET_DISTANCE, isAndroid]);
@@ -216,7 +215,6 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
         zoom: isAndroid ? 18.5 : 18
       }, { duration: 500 });
       
-      // Réactiver les mises à jour automatiques après un délai
       setTimeout(() => {
         blockAutoUpdates.current = false;
       }, 2000);
@@ -232,7 +230,6 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     forceInitialLowView();
   }, [forceInitialLowView]);
 
-  // Ajout des fonctions pour verrouiller/déverrouiller la caméra
   const unlockCamera = useCallback(() => {
     setIsCameraLocked(false);
   }, []);
@@ -286,7 +283,6 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     animateCameraSafely(camera, { duration: options.duration || 800 });
   }, [mapRef, heading, animateCameraSafely, temporarilyDisableTracking, NORMAL_PITCH, NORMAL_ALTITUDE]);
 
-  // Retourner les états, fonctions et constantes nécessaires
   return {
     isCameraLocked,
     isPreviewMode,
@@ -294,7 +290,7 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
     lockCamera,
     resetCameraView,
     focusOnLocation,
-    forceInitialLowView,  // S'assurer que cette fonction est bien exportée
+    forceInitialLowView,  
     fitToCoordinates,
     temporarilyDisableTracking,
     setPreviewMode,
@@ -306,5 +302,4 @@ const useMapCamera = (mapRef, location, heading, isNavigating, { destination, co
 
 export default useMapCamera;
 
-// Ajouter cette ligne pour la compatibilité avec l'ancienne API si nécessaire
 export const useCameraControl = useMapCamera;

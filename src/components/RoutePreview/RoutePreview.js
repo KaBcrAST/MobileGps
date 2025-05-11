@@ -4,7 +4,7 @@ import MapView, { PROVIDER_GOOGLE, Marker, Polyline } from 'react-native-maps';
 import axios from 'axios';
 import { API_URL } from '../../config/config';
 import useMapCamera from '../../hooks/useMapCamera';
-import { Ionicons } from '@expo/vector-icons'; // Assurez-vous d'avoir cette dépendance
+import { Ionicons } from '@expo/vector-icons';
 
 const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, avoidTolls }) => {
   const mapRef = useRef(null);
@@ -49,7 +49,6 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
     const selectedRoute = routes[index];
     
     if (onRouteSelect && selectedRoute) {
-      console.log('Selected route:', selectedRoute);
       onRouteSelect({
         ...selectedRoute,
         index: index
@@ -91,7 +90,6 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
     return distance;
   };
 
-  // Fonction pour récupérer la durée du trajet avec trafic
   const getTrafficDuration = (route) => {
     if (route.durationWithTraffic) {
       return route.durationWithTraffic.text;
@@ -101,12 +99,10 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
     return formatDuration(route.duration);
   };
 
-  // Fonction pour déterminer si la route a des ralentissements
   const hasTrafficSlowdowns = (route) => {
     return route.traffic && route.traffic.hasSlowdowns;
   };
 
-  // Fonction pour récupérer la durée des ralentissements
   const getSlowdownDuration = (route) => {
     if (route.traffic && route.traffic.slowdownDuration) {
       return route.traffic.slowdownDuration.text;
@@ -170,7 +166,6 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
                     </Text>
                   </View>
                   
-                  {/* Affichage des ralentissements */}
                   {hasSlowdowns && (
                     <View style={styles.trafficInfoContainer}>
                       <Ionicons name="alert-circle" size={16} color="#FF8800" />
@@ -184,7 +179,6 @@ const RoutePreview = ({ origin, destination, onRouteSelect, onStartNavigation, a
                     {route.summary || (index === 0 ? 'Route principale' : 'Alternative')}
                   </Text>
                   
-                  {/* Indicateur de péage si applicable */}
                   {route.hasTolls && (
                     <View style={styles.tollsContainer}>
                       <Ionicons name="cash-outline" size={16} color="#6B7280" />
@@ -235,7 +229,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 15,
     marginHorizontal: 6,
-    minWidth: 180, // Augmenté pour adapter plus d'informations
+    minWidth: 180,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -289,7 +283,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  // Nouveaux styles pour les infos de trafic
   trafficInfoContainer: {
     flexDirection: 'row',
     alignItems: 'center',

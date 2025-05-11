@@ -8,7 +8,6 @@ const PredictionsList = ({ predictions, onSelectPrediction, style }) => {
   return (
     <ScrollView 
       style={[styles.predictionsContainer, style]}
-      // Ajout de ces propriétés pour assurer que la ScrollView est interactive
       nestedScrollEnabled={true}
       keyboardShouldPersistTaps="handled"
     >
@@ -18,7 +17,7 @@ const PredictionsList = ({ predictions, onSelectPrediction, style }) => {
           style={styles.predictionItem}
           onPress={() => onSelectPrediction(prediction)}
         >
-          <Icon name="place" size={20} color="#666" style={styles.placeIcon} />
+          <Icon name="place" size={20} color="rgb(74, 58, 255)" style={styles.placeIcon} />
           <Text style={styles.predictionText}>{prediction.description}</Text>
         </TouchableOpacity>
       ))}
@@ -36,13 +35,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 10, // Augmenté davantage
-    zIndex: 1010, // Augmenté davantage pour être sûr
-    position: 'absolute', // Changé à absolute pour forcer la superposition
-    top: 0, // Position depuis le haut du conteneur parent
-    left: 0, // Position depuis la gauche du conteneur parent
-    right: 0, // Étirement jusqu'à droite du conteneur parent
-    overflow: 'visible', // Pour s'assurer que rien n'est coupé
+    elevation: 10,
+    zIndex: 1010,
+    position: 'absolute', 
+    top: 0,
+    left: 0, 
+    right: 0, 
+    overflow: 'visible', 
   },
   predictionItem: {
     flexDirection: 'row',

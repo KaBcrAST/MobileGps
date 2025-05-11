@@ -8,6 +8,8 @@ import CryptoJS from 'crypto-js';
 import { Platform } from 'react-native';
 import { API_URL } from '../config/config';
 
+const THEME_COLOR = 'rgb(74, 58, 255)';
+
 const LoginModal = ({ visible, onClose }) => {
   const { login } = useAuth();
   const [showRegister, setShowRegister] = useState(false);
@@ -45,14 +47,12 @@ const LoginModal = ({ visible, onClose }) => {
         setErrors({ submit: data.message || 'Email ou mot de passe incorrect' });
       }
     } catch (error) {
-      console.error('Login error:', error);
       setErrors({ submit: 'Erreur de connexion au serveur' });
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
-      console.log('Starting Google OAuth...');
       
       const result = await WebBrowser.openAuthSessionAsync(
         `${API_URL}/api/auth/google`,
@@ -62,11 +62,6 @@ const LoginModal = ({ visible, onClose }) => {
           prefersEphemeralWebBrowserSession: true
         }
       );
-
-      console.log('OAuth Result:', {
-        type: result.type,
-        hasUrl: !!result.url
-      });
 
       if (result.type === 'success' && result.url) {
         const url = new URL(result.url);
@@ -84,7 +79,6 @@ const LoginModal = ({ visible, onClose }) => {
         onClose();
       }
     } catch (error) {
-      console.error('Google login error:', error);
       setErrors({ 
         submit: 'Erreur de connexion Google: ' + error.message 
       });
@@ -213,7 +207,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   registerLink: {
-    color: '#4285f4',
+    color: THEME_COLOR,
     marginLeft: 5,
     fontWeight: '600',
   },
@@ -261,7 +255,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   loginButton: {
-    backgroundColor: '#4285f4',
+    backgroundColor: THEME_COLOR,
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
