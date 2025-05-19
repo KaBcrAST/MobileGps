@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../config/config';
 
-// Export the decode polyline utility
 export const decodePolyline = (encoded) => {
   if (!encoded) return [];
   
@@ -48,9 +47,9 @@ export const decodePolyline = (encoded) => {
 
 export const navigationService = {
   decodePolyline,
-
   async getSpeedLimit(location, retries = 2) {
     if (!location?.coords?.latitude || !location?.coords?.longitude) {
+      console.error('Invalid location data');
       return null;
     }
 
@@ -60,6 +59,7 @@ export const navigationService = {
       longitude: Number(longitude).toFixed(6)
     };
 
+
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const response = await axios.get(`${API_URL}/api/speed-limit`, {
@@ -68,7 +68,7 @@ export const navigationService = {
             longitude: formattedCoords.longitude,
             accuracy
           },
-          timeout: 5000,
+          timeout: 5000, 
           headers: {
             'Accept': 'application/json'
           }
@@ -80,31 +80,20 @@ export const navigationService = {
         const isTimeout = error.code === 'ECONNABORTED' || error.message.includes('timeout');
         const isLastAttempt = attempt === retries;
 
+        console.warn(`❌ Speed limit attempt ${attempt + 1}/${retries + 1} failed:`, {
+          isTimeout,
+          message: error.message
+        });
+
         if (isLastAttempt) {
           return null;
         }
 
-        // Wait before retry (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+        await wait(1000 * Math.pow(2, attempt));
       }
     }
   },
 
-  formatCoords(coords) {
-    if (!coords) return null;
-    
-    const lat = coords.coords?.latitude || coords.latitude;
-    const lng = coords.coords?.longitude || coords.longitude;
-    
-    if (typeof lat !== 'number' || typeof lng !== 'number') {
-      throw new Error('Invalid coordinates format');
-    }
-
-    return `${Number(lat).toFixed(6)},${Number(lng).toFixed(6)}`;
-  }
 };
-
-// Helper function for waiting between retries
-const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 
